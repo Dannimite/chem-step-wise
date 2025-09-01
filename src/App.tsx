@@ -8,6 +8,12 @@ import { AppSidebar } from "@/components/ui/app-sidebar";
 import Index from "./pages/Index";
 import GasLaws from "./pages/GasLaws";
 import Stoichiometry from "./pages/Stoichiometry";
+import Equations from "./pages/Equations";
+import MolarMass from "./pages/MolarMass";
+import Concentration from "./pages/Concentration";
+import PHPage from "./pages/pH";
+import Thermochemistry from "./pages/Thermochemistry";
+import Examples from "./pages/Examples";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +39,12 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/gas-laws" element={<GasLaws />} />
                   <Route path="/stoichiometry" element={<Stoichiometry />} />
+                  <Route path="/equations" element={<Equations />} />
+                  <Route path="/molar-mass" element={<MolarMass />} />
+                  <Route path="/concentration" element={<Concentration />} />
+                  <Route path="/ph" element={<PHPage />} />
+                  <Route path="/thermochemistry" element={<Thermochemistry />} />
+                  <Route path="/examples" element={<Examples />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>
