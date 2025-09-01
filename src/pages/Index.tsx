@@ -16,20 +16,9 @@ const Index = () => {
 
   const handleQuestionSubmit = async (question: string, topicHint?: string) => {
     setIsLoading(true)
-    // Simulate API call with actual problem solving
+    // Simulate API call
     setTimeout(() => {
-      // Create a more dynamic solution based on the question
-      const detectedTopic = question.toLowerCase().includes('pressure') || question.toLowerCase().includes('volume') ? 'gas-laws' :
-                           question.toLowerCase().includes('mole') || question.toLowerCase().includes('react') ? 'stoichiometry' :
-                           question.toLowerCase().includes('ph') || question.toLowerCase().includes('acid') ? 'ph' :
-                           question.toLowerCase().includes('heat') || question.toLowerCase().includes('temperature') ? 'thermochemistry' :
-                           'general-chemistry'
-      
-      setSolution({
-        ...mockSolverResponse,
-        detectedTopic,
-        canonicalProblem: question
-      })
+      setSolution(mockSolverResponse)
       setIsLoading(false)
     }, 2000)
   }
