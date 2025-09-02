@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import Index from "./pages/Index";
 import GasLaws from "./pages/GasLaws";
+import PeriodicTable from "./pages/PeriodicTable";
 import Stoichiometry from "./pages/Stoichiometry";
 import Equations from "./pages/Equations";
 import MolarMass from "./pages/MolarMass";
@@ -38,6 +39,7 @@ const App = () => (
                 <Routes>
                   <Route path="/" element={<Index />} />
                   <Route path="/gas-laws" element={<GasLaws />} />
+                  <Route path="/periodic-table" element={<PeriodicTable />} />
                   <Route path="/stoichiometry" element={<Stoichiometry />} />
                   <Route path="/equations" element={<Equations />} />
                   <Route path="/molar-mass" element={<MolarMass />} />

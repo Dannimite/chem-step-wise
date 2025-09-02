@@ -9,7 +9,8 @@ import {
   TestTube,
   Thermometer,
   BookOpen,
-  Home
+  Home,
+  Grid3X3
 } from "lucide-react"
 
 import {
@@ -37,6 +38,12 @@ const topics = [
     url: "/gas-laws", 
     icon: Gauge,
     description: "Boyle's, Charles's, Gay-Lussac's laws"
+  },
+  { 
+    title: "Periodic Table", 
+    url: "/periodic-table", 
+    icon: Grid3X3,
+    description: "Interactive periodic table & molar mass"
   },
   { 
     title: "Stoichiometry", 
