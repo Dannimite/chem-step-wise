@@ -5,9 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { QuestionInput } from "@/components/chemistry/QuestionInput"
 import { SolutionDisplay } from "@/components/chemistry/SolutionDisplay"
-import { mockExampleProblems } from "@/data/mockData"
+import { mockSolverResponse, mockExampleProblems } from "@/data/mockData"
 import { SolverResponse } from "@/types/chemistry"
-import { chemistrySolver } from "@/services/chemistrySolver"
 import { useNavigate } from "react-router-dom"
 
 const Index = () => {
@@ -19,10 +18,20 @@ const Index = () => {
     setIsLoading(true)
     // Simulate API call with actual problem solving
     setTimeout(() => {
-      const solverResult = chemistrySolver.solve(question, topicHint)
-      setSolution(solverResult)
+      // Create a more dynamic solution based on the question
+      const detectedTopic = question.toLowerCase().includes('pressure') || question.toLowerCase().includes('volume') ? 'gas-laws' :
+                           question.toLowerCase().includes('mole') || question.toLowerCase().includes('react') ? 'stoichiometry' :
+                           question.toLowerCase().includes('ph') || question.toLowerCase().includes('acid') ? 'ph' :
+                           question.toLowerCase().includes('heat') || question.toLowerCase().includes('temperature') ? 'thermochemistry' :
+                           'general-chemistry'
+      
+      setSolution({
+        ...mockSolverResponse,
+        detectedTopic,
+        canonicalProblem: question
+      })
       setIsLoading(false)
-    }, 1500)
+    }, 2000)
   }
 
   const featuredTopics = [

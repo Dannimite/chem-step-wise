@@ -54,12 +54,11 @@ export interface SolverResponse {
   success: boolean
   detectedTopic: string
   canonicalProblem: string
-  variables?: Record<string, Variable>
+  variables: Record<string, Variable>
   steps: SolutionStep[]
   finalAnswer: string
   latexEquations: string[]
   confidence: number
-  interpretation?: string
   clarifyingQuestions?: string[]
   error?: string
 }
