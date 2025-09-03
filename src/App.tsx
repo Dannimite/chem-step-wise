@@ -15,6 +15,11 @@ import MolarMass from "./pages/MolarMass";
 import Concentration from "./pages/Concentration";
 import PHPage from "./pages/pH";
 import Thermochemistry from "./pages/Thermochemistry";
+import ChemicalBonding from "./pages/ChemicalBonding";
+import RedoxReactions from "./pages/RedoxReactions";
+import Electrolysis from "./pages/Electrolysis";
+import ChemicalEquilibrium from "./pages/ChemicalEquilibrium";
+import AtomicStructure from "./pages/AtomicStructure";
 import LabEquipment from "./pages/LabEquipment";
 import Examples from "./pages/Examples";
 import NotFound from "./pages/NotFound";
@@ -49,6 +54,11 @@ const App = () => (
                   <Route path="/concentration" element={<Concentration />} />
                   <Route path="/ph" element={<PHPage />} />
                   <Route path="/thermochemistry" element={<Thermochemistry />} />
+                  <Route path="/chemical-bonding" element={<ChemicalBonding />} />
+                  <Route path="/redox-reactions" element={<RedoxReactions />} />
+                  <Route path="/electrolysis" element={<Electrolysis />} />
+                  <Route path="/chemical-equilibrium" element={<ChemicalEquilibrium />} />
+                  <Route path="/atomic-structure" element={<AtomicStructure />} />
                   <Route path="/lab-equipment" element={<LabEquipment />} />
                   <Route path="/examples" element={<Examples />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

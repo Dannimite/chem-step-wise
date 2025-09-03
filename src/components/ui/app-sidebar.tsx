@@ -12,7 +12,10 @@ import {
   Home,
   Grid3X3,
   Zap,
-  Microscope
+  Microscope,
+  Link,
+  Battery,
+  Scale
 } from "lucide-react"
 
 import {
@@ -88,6 +91,36 @@ const topics = [
     url: "/thermochemistry", 
     icon: Thermometer,
     description: "Heat calculations and calorimetry"
+  },
+  { 
+    title: "Chemical Bonding", 
+    url: "/chemical-bonding", 
+    icon: Link,
+    description: "Ionic, covalent, and metallic bonding"
+  },
+  { 
+    title: "Redox Reactions", 
+    url: "/redox-reactions", 
+    icon: Zap,
+    description: "Oxidation-reduction processes"
+  },
+  { 
+    title: "Electrolysis", 
+    url: "/electrolysis", 
+    icon: Battery,
+    description: "Electrochemical cells and Faraday's laws"
+  },
+  { 
+    title: "Chemical Equilibrium", 
+    url: "/chemical-equilibrium", 
+    icon: Scale,
+    description: "Equilibrium and Le Châtelier's principle"
+  },
+  { 
+    title: "Atomic Structure", 
+    url: "/atomic-structure", 
+    icon: Atom,
+    description: "Atomic models and electron configuration"
   },
   { 
     title: "Lab Equipment", 
