@@ -10,7 +10,8 @@ import {
   Thermometer,
   BookOpen,
   Home,
-  Grid3X3
+  Grid3X3,
+  Zap
 } from "lucide-react"
 
 import {
@@ -44,6 +45,12 @@ const topics = [
     url: "/periodic-table", 
     icon: Grid3X3,
     description: "Interactive periodic table & molar mass"
+  },
+  { 
+    title: "Nuclear Reactions", 
+    url: "/nuclear-reactions", 
+    icon: Zap,
+    description: "Nuclear processes, decay chains, and calculations"
   },
   { 
     title: "Stoichiometry", 
