@@ -15,6 +15,7 @@ import MolarMass from "./pages/MolarMass";
 import Concentration from "./pages/Concentration";
 import PHPage from "./pages/pH";
 import Thermochemistry from "./pages/Thermochemistry";
+import LabEquipment from "./pages/LabEquipment";
 import Examples from "./pages/Examples";
 import NotFound from "./pages/NotFound";
 
@@ -33,7 +34,7 @@ const App = () => (
               <header className="h-14 flex items-center border-b border-border/50 bg-card/50 backdrop-blur-sm">
                 <SidebarTrigger className="ml-4" />
                 <div className="flex-1 px-4">
-                  <h1 className="text-lg font-semibold text-foreground">ChemSolver</h1>
+                  <h1 className="text-lg font-semibold text-foreground">Reactify</h1>
                 </div>
               </header>
               <main className="flex-1 p-6 chemistry-scroll overflow-auto">
@@ -48,6 +49,7 @@ const App = () => (
                   <Route path="/concentration" element={<Concentration />} />
                   <Route path="/ph" element={<PHPage />} />
                   <Route path="/thermochemistry" element={<Thermochemistry />} />
+                  <Route path="/lab-equipment" element={<LabEquipment />} />
                   <Route path="/examples" element={<Examples />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
