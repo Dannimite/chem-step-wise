@@ -6,34 +6,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calculator } from "lucide-react"
-import { mockStoichiometryVariables, mockExampleProblems } from "@/data/mockData"
+import { mockStoichiometryVariables } from "@/data/mockData"
 import { SolverResponse } from "@/types/chemistry"
+import { chemistrySolver } from "@/services/chemistrySolver"
 
 const Stoichiometry = () => {
   const [solution, setSolution] = useState<SolverResponse>()
   const [isLoading, setIsLoading] = useState(false)
   const [calculatorResult, setCalculatorResult] = useState<string>()
 
-  const handleQuestionSubmit = async (question: string, topicHint?: string) => {
-    setIsLoading(true)
-    // Simulate API call with stoichiometry example
-    setTimeout(() => {
-      const stoichExample = mockExampleProblems.find(p => p.topicId === "stoichiometry")
-      if (stoichExample) {
-        setSolution({
-          success: true,
-          detectedTopic: "Stoichiometry",
-          canonicalProblem: stoichExample.question,
-          variables: stoichExample.variables,
-          steps: stoichExample.solution,
-          finalAnswer: "30.0 g CO₂",
-          latexEquations: ["\\text{C}_3\\text{H}_8 + 5\\text{O}_2 \\rightarrow 3\\text{CO}_2 + 4\\text{H}_2\\text{O}", "n = \\frac{m}{MM}"],
-          confidence: 0.92
-        })
-      }
-      setIsLoading(false)
-    }, 2500)
-  }
+const handleQuestionSubmit = async (question: string, topicHint?: string) => {
+  setIsLoading(true)
+  setSolution(undefined) // Clear previous solution immediately
+  
+  // Simulate API call with actual solver
+  setTimeout(() => {
+    const result = chemistrySolver.solve(question, topicHint)
+    setSolution(result)
+    setIsLoading(false)
+  }, 2000)
+}
 
   const handleCalculation = (values: Record<string, number>) => {
     // Simple mole calculation for demo
