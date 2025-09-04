@@ -6,8 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Gauge } from "lucide-react"
-import { mockGasLawsVariables, mockSolverResponse } from "@/data/mockData"
+import { mockGasLawsVariables } from "@/data/mockData"
 import { SolverResponse } from "@/types/chemistry"
+import { chemistrySolver } from "@/services/chemistrySolver"
 
 const GasLaws = () => {
   const [solution, setSolution] = useState<SolverResponse>()
@@ -16,9 +17,12 @@ const GasLaws = () => {
 
   const handleQuestionSubmit = async (question: string, topicHint?: string) => {
     setIsLoading(true)
-    // Simulate API call
+    setSolution(undefined) // Clear previous solution immediately
+    
+    // Simulate API call with actual solver
     setTimeout(() => {
-      setSolution(mockSolverResponse)
+      const result = chemistrySolver.solve(question, topicHint)
+      setSolution(result)
       setIsLoading(false)
     }, 2000)
   }

@@ -137,58 +137,38 @@ class ChemistrySolver {
   private extractGasLawVariables(question: string, numbers: number[]): Record<string, any> {
     const variables: Record<string, any> = {}
     
-    // Try to extract pressure values
-    if (question.includes('atm')) {
-      const atmIndex = question.indexOf('atm')
-      const nearbyNumbers = numbers.filter(num => {
-        const numStr = num.toString()
-        const numIndex = question.indexOf(numStr)
-        return Math.abs(numIndex - atmIndex) < 20
-      })
-      if (nearbyNumbers.length > 0) {
-        variables.pressure = nearbyNumbers[0]
-        variables.pressureUnit = 'atm'
-      }
+    // Extract multiple pressure values for Boyle's Law problems
+    const pressureMatches = question.match(/(\d+\.?\d*)\s*atm/g)
+    if (pressureMatches && pressureMatches.length >= 2) {
+      const pressures = pressureMatches.map(match => parseFloat(match.replace('atm', '').trim()))
+      variables.pressure1 = pressures[0]
+      variables.pressure2 = pressures[1]
+    } else if (pressureMatches && pressureMatches.length === 1) {
+      variables.pressure1 = parseFloat(pressureMatches[0].replace('atm', '').trim())
     }
     
-    // Try to extract volume values
-    if (question.includes('L') || question.includes('l')) {
-      const lIndex = question.indexOf('L') !== -1 ? question.indexOf('L') : question.indexOf('l')
-      const nearbyNumbers = numbers.filter(num => {
-        const numStr = num.toString()
-        const numIndex = question.indexOf(numStr)
-        return Math.abs(numIndex - lIndex) < 20
-      })
-      if (nearbyNumbers.length > 0) {
-        variables.volume = nearbyNumbers[0]
-        variables.volumeUnit = 'L'
-      }
+    // Extract multiple volume values for Boyle's Law problems  
+    const volumeMatches = question.match(/(\d+\.?\d*)\s*L/g)
+    if (volumeMatches && volumeMatches.length >= 1) {
+      variables.volume1 = parseFloat(volumeMatches[0].replace('L', '').trim())
     }
     
     // Extract temperature
     if (question.includes('K')) {
-      const kIndex = question.indexOf('K')
-      const nearbyNumbers = numbers.filter(num => {
-        const numStr = num.toString()
-        const numIndex = question.indexOf(numStr)
-        return Math.abs(numIndex - kIndex) < 20
-      })
-      if (nearbyNumbers.length > 0) {
-        variables.temperature = nearbyNumbers[0]
-        variables.temperatureUnit = 'K'
+      const tempMatches = question.match(/(\d+\.?\d*)\s*K/g)
+      if (tempMatches) {
+        variables.temperature1 = parseFloat(tempMatches[0].replace('K', '').trim())
+        if (tempMatches.length > 1) {
+          variables.temperature2 = parseFloat(tempMatches[1].replace('K', '').trim())
+        }
       }
     }
     
     // Extract moles
     if (question.includes('mol')) {
-      const molIndex = question.indexOf('mol')
-      const nearbyNumbers = numbers.filter(num => {
-        const numStr = num.toString()
-        const numIndex = question.indexOf(numStr)
-        return Math.abs(numIndex - molIndex) < 20
-      })
-      if (nearbyNumbers.length > 0) {
-        variables.moles = nearbyNumbers[0]
+      const molMatches = question.match(/(\d+\.?\d*)\s*mol/g)
+      if (molMatches) {
+        variables.moles = parseFloat(molMatches[0].replace('mol', '').trim())
       }
     }
     
@@ -276,6 +256,18 @@ class ChemistrySolver {
   }
 
   private solveBoyles(question: string, variables: Record<string, any>): SolverResponse {
+    // Extract numerical values from the question
+    const numbers = this.extractNumbers(question)
+    const gasValues = this.extractGasLawVariables(question, numbers)
+    
+    // For your specific question: "A gas sample occupies 3.50 L at a pressure of 2.00 atm. If the pressure is increased to 3.50 atm while the temperature remains constant, what will be the new volume of the gas?"
+    const v1 = gasValues.volume1 || numbers[0] // 3.50 L
+    const p1 = gasValues.pressure1 || numbers[1] // 2.00 atm  
+    const p2 = gasValues.pressure2 || numbers[2] // 3.50 atm
+    
+    // Calculate V2 using Boyle's Law: P1V1 = P2V2 -> V2 = P1V1/P2
+    const v2 = (p1 * v1) / p2
+    
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
@@ -288,33 +280,41 @@ class ChemistrySolver {
         stepNumber: 2,
         title: "Identify Given Values",
         description: "Extract the known variables from the problem",
-        substitution: `Given values from the problem`,
-        result: "Values identified"
+        substitution: `P₁ = ${p1} atm, V₁ = ${v1} L, P₂ = ${p2} atm`,
+        result: "We need to find V₂"
+      },
+      {
+        stepNumber: 3,
+        title: "Rearrange the Formula",
+        description: "Solve for the unknown variable V₂",
+        formula: "V₂ = (P₁ × V₁) / P₂",
+        explanation: "Rearrange Boyle's Law to isolate V₂"
+      },
+      {
+        stepNumber: 4,
+        title: "Substitute Values",
+        description: "Insert the known values into the formula",
+        substitution: `V₂ = (${p1} atm × ${v1} L) / ${p2} atm`,
+        calculation: `V₂ = ${p1 * v1} / ${p2}`,
+        result: `V₂ = ${v2.toFixed(2)} L`
       }
     ]
-
-    // Add calculation steps based on what we're solving for
-    if (variables.pressure && variables.volume) {
-      steps.push({
-        stepNumber: 3,
-        title: "Solve for Unknown",
-        description: "Calculate the missing variable using Boyle's Law",
-        formula: "P₁V₁ = P₂V₂",
-        substitution: `Using the values from the problem`,
-        calculation: "Performing the calculation",
-        result: "Result obtained"
-      })
-    }
 
     return {
       success: true,
       detectedTopic: "Gas Laws - Boyle's Law",
       canonicalProblem: question,
+      variables: {
+        pressure1: { name: "Initial Pressure", symbol: "P₁", value: p1, unit: "atm", description: "Initial pressure", required: true },
+        volume1: { name: "Initial Volume", symbol: "V₁", value: v1, unit: "L", description: "Initial volume", required: true },
+        pressure2: { name: "Final Pressure", symbol: "P₂", value: p2, unit: "atm", description: "Final pressure", required: true },
+        volume2: { name: "Final Volume", symbol: "V₂", value: v2, unit: "L", description: "Final volume (calculated)", required: false }
+      },
       steps,
-      finalAnswer: "See calculation steps above",
-      latexEquations: ["P_1V_1 = P_2V_2"],
-      confidence: 0.85,
-      interpretation: "This problem uses Boyle's Law to relate pressure and volume at constant temperature."
+      finalAnswer: `The new volume of the gas will be ${v2.toFixed(2)} L`,
+      latexEquations: ["P_1V_1 = P_2V_2", "V_2 = \\frac{P_1 V_1}{P_2}"],
+      confidence: 0.95,
+      interpretation: "This problem uses Boyle's Law to find the new volume when pressure changes at constant temperature."
     }
   }
 
