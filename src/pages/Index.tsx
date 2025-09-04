@@ -17,6 +17,7 @@ const Index = () => {
 
   const handleQuestionSubmit = async (question: string, topicHint?: string) => {
     setIsLoading(true)
+    setSolution(undefined) // Clear previous solution immediately
     // Simulate API call with actual problem solving
     setTimeout(() => {
       const solverResult = chemistrySolver.solve(question, topicHint)

@@ -4,6 +4,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AppSidebar } from "@/components/ui/app-sidebar";
 import Index from "./pages/Index";
 import GasLaws from "./pages/GasLaws";
@@ -28,7 +30,8 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -36,10 +39,15 @@ const App = () => (
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
             <div className="flex-1 flex flex-col">
-              <header className="h-14 flex items-center border-b border-border/50 bg-card/50 backdrop-blur-sm">
-                <SidebarTrigger className="ml-4" />
-                <div className="flex-1 px-4">
-                  <h1 className="text-lg font-semibold text-foreground">Reactify</h1>
+              <header className="h-14 flex items-center justify-between border-b border-border/50 bg-card/50 backdrop-blur-sm">
+                <div className="flex items-center">
+                  <SidebarTrigger className="ml-4" />
+                  <div className="px-4">
+                    <h1 className="text-lg font-semibold text-foreground">Reactify</h1>
+                  </div>
+                </div>
+                <div className="mr-4">
+                  <ThemeToggle />
                 </div>
               </header>
               <main className="flex-1 p-6 chemistry-scroll overflow-auto">
@@ -70,6 +78,7 @@ const App = () => (
         </SidebarProvider>
       </BrowserRouter>
     </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
