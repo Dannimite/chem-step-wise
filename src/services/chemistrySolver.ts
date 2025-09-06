@@ -10,14 +10,14 @@ class ChemistrySolver {
   analyzeQuestion(question: string): QuestionAnalysis {
     const lowerQuestion = question.toLowerCase()
     
-    // Gas Laws Detection
-    if (this.isGasLawsProblem(lowerQuestion)) {
-      return this.analyzeGasLaws(question)
-    }
-    
-    // Stoichiometry Detection
+    // Stoichiometry Detection (prefer before Gas Laws to avoid false positives)
     if (this.isStoichiometryProblem(lowerQuestion)) {
       return this.analyzeStoichiometry(question)
+    }
+    
+    // Gas Laws Detection (requires stricter indicators)
+    if (this.isGasLawsProblem(lowerQuestion)) {
+      return this.analyzeGasLaws(question)
     }
     
     // pH Problems Detection
@@ -44,8 +44,13 @@ class ChemistrySolver {
   }
 
   private isGasLawsProblem(question: string): boolean {
-    const gasKeywords = ['pressure', 'volume', 'temperature', 'atm', 'l', 'ml', 'gas', 'boyle', 'charles', 'ideal gas', 'pv=nrt']
-    return gasKeywords.some(keyword => question.includes(keyword))
+    const q = question.toLowerCase()
+    const hasPressureUnit = /\b\d+(\.\d+)?\s*(atm|kpa|pa|torr|mmhg)\b/i.test(q) || /\bpressure\b/i.test(q)
+    const hasVolumeUnit = /\b\d+(\.\d+)?\s*(l|ml)\b/i.test(q) || /\bvolume\b/i.test(q)
+    const hasTempUnit = /\b\d+(\.\d+)?\s*k\b/i.test(q) || /\btemperature\b/i.test(q) || /°c/i.test(q)
+    const hasNamedLaw = /\bboyle'?s?\b|\bcharles'?s?\b|\bideal\s+gas\b|pv\s*=\s*nrt/i.test(q)
+    const hasGasWord = /\bgas(es)?\b/i.test(q)
+    return hasNamedLaw || (hasPressureUnit && (hasVolumeUnit || hasTempUnit)) || (hasGasWord && (hasPressureUnit || hasVolumeUnit || hasTempUnit))
   }
 
   private isStoichiometryProblem(question: string): boolean {
@@ -279,7 +284,26 @@ class ChemistrySolver {
   }
   
   solve(question: string, topicHint?: string): SolverResponse {
-    const analysis = this.analyzeQuestion(question)
+    let analysis: QuestionAnalysis | undefined
+    const hint = topicHint?.toLowerCase()
+
+    if (hint) {
+      if (hint.includes('stoich')) {
+        analysis = this.analyzeStoichiometry(question)
+      } else if (hint.includes('gas')) {
+        analysis = this.analyzeGasLaws(question)
+      } else if (hint.includes('ph')) {
+        analysis = this.analyzePH(question)
+      } else if (hint.includes('concentration') || hint.includes('molarity')) {
+        analysis = this.analyzeConcentration(question)
+      } else if (hint.includes('thermo')) {
+        analysis = this.analyzeThermochemistry(question)
+      }
+    }
+
+    if (!analysis) {
+      analysis = this.analyzeQuestion(question)
+    }
     
     switch (analysis.topic) {
       case 'gas-laws':

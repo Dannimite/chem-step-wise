@@ -21,7 +21,7 @@ const handleQuestionSubmit = async (question: string, topicHint?: string) => {
   
   // Simulate API call with actual solver
   setTimeout(() => {
-    const result = chemistrySolver.solve(question, topicHint)
+    const result = chemistrySolver.solve(question, topicHint ?? 'stoichiometry')
     setSolution(result)
     setIsLoading(false)
   }, 2000)
