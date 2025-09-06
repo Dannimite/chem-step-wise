@@ -177,12 +177,28 @@ class ChemistrySolver {
 
   private extractStoichiometryVariables(question: string, numbers: number[]): Record<string, any> {
     const variables: Record<string, any> = {}
-    
-    if (question.includes('g') || question.includes('gram')) {
-      variables.mass = numbers[0] || 0
+
+    // Mass (g)
+    const norm = this.normalizeFormula(question)
+    const massMatch = norm.match(/(\d+\.?\d*)\s*(g|grams?)/i)
+    if (massMatch) {
+      variables.mass = parseFloat(massMatch[1])
       variables.massUnit = 'g'
     }
-    
+
+    // Try to detect hydrocarbon formula from text (supports subscripts like CH₄)
+    const hydro = this.detectHydrocarbon(question)
+    if (hydro) {
+      variables.reactantFormula = hydro.formula
+      variables.carbonAtoms = hydro.x
+      variables.hydrogenAtoms = hydro.y
+    }
+
+    // Detect if CO2 is the asked product
+    if (/(co2|carbon dioxide)/i.test(this.normalizeFormula(question))) {
+      variables.productFormula = 'CO2'
+    }
+
     return variables
   }
 
@@ -221,6 +237,47 @@ class ChemistrySolver {
     return variables
   }
 
+  // Normalize unicode chemical subscripts to ASCII digits (e.g., CH₄ -> CH4)
+  private normalizeFormula(text: string): string {
+    const subMap: Record<string, string> = {
+      '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4',
+      '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9'
+    }
+    return text.replace(/[₀-₉]/g, (m) => subMap[m] || m)
+  }
+
+  // Detect simple alkane/alkene style hydrocarbons in the question text
+  private detectHydrocarbon(question: string): { formula: string; x: number; y: number } | null {
+    const normalized = this.normalizeFormula(question)
+
+    // Direct formula match like CH4, C3H8, C2H6, etc.
+    const match = normalized.match(/C(\d*)H(\d*)/i)
+    if (match) {
+      const x = parseInt(match[1] || '1', 10)
+      const y = parseInt(match[2] || '1', 10)
+      return { formula: `C${x}H${y}`, x, y }
+    }
+
+    // Name-based mapping for common alkanes
+    const nameMap: Record<string, { formula: string; x: number; y: number }> = {
+      methane: { formula: 'CH4', x: 1, y: 4 },
+      ethane: { formula: 'C2H6', x: 2, y: 6 },
+      propane: { formula: 'C3H8', x: 3, y: 8 },
+      butane: { formula: 'C4H10', x: 4, y: 10 },
+    }
+    const lower = normalized.toLowerCase()
+    for (const name of Object.keys(nameMap)) {
+      if (lower.includes(name)) return nameMap[name]
+    }
+
+    return null
+  }
+
+  private containsCO2(question: string): boolean {
+    const normalized = this.normalizeFormula(question).toLowerCase()
+    return normalized.includes('co2') || normalized.includes('carbon dioxide')
+  }
+  
   solve(question: string, topicHint?: string): SolverResponse {
     const analysis = this.analyzeQuestion(question)
     
@@ -396,44 +453,139 @@ class ChemistrySolver {
   }
 
   private solveStoichiometry(question: string, analysis: QuestionAnalysis): SolverResponse {
+    const numbers = this.extractNumbers(this.normalizeFormula(question))
+    const vars = this.extractStoichiometryVariables(question, numbers)
+
+    // Handle complete combustion of hydrocarbons producing CO2
+    const isCombustion = analysis.problemType === 'combustion' || /burn|combustion/i.test(question)
+    const hydroOk = typeof vars.carbonAtoms === 'number' && typeof vars.hydrogenAtoms === 'number'
+    const hasMass = typeof vars.mass === 'number' && vars.mass > 0
+    const asksCO2 = this.containsCO2(question)
+
+    if (isCombustion && hydroOk && hasMass && asksCO2) {
+      const x = vars.carbonAtoms as number
+      const y = vars.hydrogenAtoms as number
+
+      // Molar masses (g/mol)
+      const MM_C = 12.01
+      const MM_H = 1.008
+      const MM_O = 16.00
+      const MM_CO2 = MM_C + 2 * MM_O // 44.01
+
+      const MM_hydrocarbon = x * MM_C + y * MM_H
+
+      // Given mass of hydrocarbon
+      const m_hc = vars.mass as number
+      const n_hc = m_hc / MM_hydrocarbon
+
+      // Stoichiometry: CxHy + (x + y/4) O2 -> x CO2 + (y/2) H2O
+      const n_CO2 = x * n_hc
+      const m_CO2 = n_CO2 * MM_CO2
+
+      const reactantFormula = vars.reactantFormula || `C${x}H${y}`
+
+      const steps: SolutionStep[] = [
+        {
+          stepNumber: 1,
+          title: 'Write Balanced Equation',
+          description: 'Balance the complete combustion of the hydrocarbon',
+          formula: `${reactantFormula} + ${(x + y / 4).toFixed(2)} O₂ → ${x} CO₂ + ${(y / 2).toFixed(2)} H₂O`,
+          latexFormula: `${reactantFormula.replace(/([A-Z])(\d+)/g, '$1_$2')} + ${(x + y / 4).toFixed(2)}\,O_2 \\rightarrow ${x}\,CO_2 + ${(y / 2).toFixed(2)}\,H_2O`,
+          explanation: 'General form: C_xH_y + (x + y/4) O₂ → x CO₂ + y/2 H₂O'
+        },
+        {
+          stepNumber: 2,
+          title: 'Convert Given Mass to Moles',
+          description: 'Use n = m/MM to find moles of hydrocarbon',
+          formula: 'n = m/MM',
+          substitution: `n(${reactantFormula}) = ${m_hc} g / ${MM_hydrocarbon.toFixed(2)} g/mol`,
+          calculation: `n(${reactantFormula}) = ${(n_hc).toFixed(4)} mol`,
+          result: `Moles of ${reactantFormula}: ${(n_hc).toFixed(4)} mol`
+        },
+        {
+          stepNumber: 3,
+          title: 'Use Mole Ratio to Find CO₂ Moles',
+          description: 'From the balanced equation, 1 mol of hydrocarbon produces x mol of CO₂',
+          substitution: `n(CO₂) = ${x} × ${(n_hc).toFixed(4)} mol`,
+          calculation: `n(CO₂) = ${(n_CO2).toFixed(4)} mol`,
+          result: `Moles of CO₂: ${(n_CO2).toFixed(4)} mol`
+        },
+        {
+          stepNumber: 4,
+          title: 'Convert CO₂ Moles to Mass',
+          description: 'm = n × MM',
+          formula: 'm = n × MM',
+          substitution: `m(CO₂) = ${(n_CO2).toFixed(4)} mol × ${MM_CO2.toFixed(2)} g/mol`,
+          calculation: `m(CO₂) = ${(m_CO2).toFixed(2)} g`,
+          result: `Mass of CO₂ produced = ${(m_CO2).toFixed(2)} g`
+        }
+      ]
+
+      return {
+        success: true,
+        detectedTopic: 'Stoichiometry - Combustion',
+        canonicalProblem: question,
+        variables: {
+          reactantMass: { name: 'Hydrocarbon Mass', symbol: 'm', value: m_hc, unit: 'g', description: 'Given mass of hydrocarbon', required: true },
+          reactantFormula: { name: 'Hydrocarbon', symbol: reactantFormula, unit: '', description: 'Detected hydrocarbon formula', required: true },
+          productFormula: { name: 'Product', symbol: 'CO₂', unit: '', description: 'Target product', required: true },
+          molarMassReactant: { name: 'Molar Mass (Reactant)', symbol: 'MM', value: parseFloat(MM_hydrocarbon.toFixed(2)), unit: 'g/mol', description: 'Molar mass of hydrocarbon', required: true },
+          molarMassCO2: { name: 'Molar Mass (CO₂)', symbol: 'MM_CO₂', value: 44.01, unit: 'g/mol', description: 'Molar mass of CO₂', required: true },
+          molesReactant: { name: 'Moles (Reactant)', symbol: 'n', value: parseFloat(n_hc.toFixed(4)), unit: 'mol', description: 'Calculated moles of hydrocarbon', required: false },
+          molesCO2: { name: 'Moles (CO₂)', symbol: 'n_CO₂', value: parseFloat(n_CO2.toFixed(4)), unit: 'mol', description: 'Calculated moles of CO₂', required: false },
+          massCO2: { name: 'Mass of CO₂', symbol: 'm_CO₂', value: parseFloat(m_CO2.toFixed(2)), unit: 'g', description: 'Calculated mass of CO₂', required: false },
+        },
+        steps,
+        finalAnswer: `CO₂ produced = ${(m_CO2).toFixed(2)} g`,
+        latexEquations: [
+          'n = \\frac{m}{MM}',
+          'm = n \\times MM',
+          `${reactantFormula.replace(/([A-Z])(\d+)/g, '$1_$2')} + ${(x + y / 4).toFixed(2)}\\,O_2 \\rightarrow ${x}\\,CO_2 + ${(y / 2).toFixed(2)}\\,H_2O`
+        ],
+        confidence: 0.93,
+        interpretation: 'Converted mass to moles, used mole ratio from balanced combustion, then converted back to mass.'
+      }
+    }
+
+    // Fallback generic outline if we cannot safely parse
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
-        title: "Write Balanced Equation",
-        description: "Write the balanced chemical equation for the reaction",
-        explanation: "A balanced equation shows the mole relationships between reactants and products"
+        title: 'Write Balanced Equation',
+        description: 'Write the balanced chemical equation for the reaction',
+        explanation: 'A balanced equation shows the mole relationships between reactants and products'
       },
       {
         stepNumber: 2,
-        title: "Convert to Moles",
-        description: "Convert given mass to moles using molar mass",
-        formula: "n = m/MM",
-        explanation: "Moles = mass ÷ molar mass"
+        title: 'Convert to Moles',
+        description: 'Convert given mass to moles using molar mass',
+        formula: 'n = m/MM',
+        explanation: 'Moles = mass ÷ molar mass'
       },
       {
         stepNumber: 3,
-        title: "Use Stoichiometry",
-        description: "Use mole ratios from balanced equation",
-        explanation: "The coefficients in the balanced equation give mole ratios"
+        title: 'Use Stoichiometry',
+        description: 'Use mole ratios from balanced equation',
+        explanation: 'The coefficients in the balanced equation give mole ratios'
       },
       {
         stepNumber: 4,
-        title: "Convert to Desired Units",
-        description: "Convert moles back to mass if needed",
-        formula: "m = n × MM",
-        explanation: "Mass = moles × molar mass"
+        title: 'Convert to Desired Units',
+        description: 'Convert moles back to mass if needed',
+        formula: 'm = n × MM',
+        explanation: 'Mass = moles × molar mass'
       }
     ]
 
     return {
       success: true,
-      detectedTopic: "Stoichiometry",
+      detectedTopic: 'Stoichiometry',
       canonicalProblem: question,
       steps,
-      finalAnswer: "See calculation steps above",
-      latexEquations: ["n = \\frac{m}{MM}", "m = n \\times MM"],
+      finalAnswer: 'See calculation steps above',
+      latexEquations: ['n = \\frac{m}{MM}', 'm = n \\times MM'],
       confidence: 0.80,
-      interpretation: "This stoichiometry problem involves converting between mass and moles using balanced equations."
+      interpretation: 'This stoichiometry problem involves converting between mass and moles using balanced equations.'
     }
   }
 
