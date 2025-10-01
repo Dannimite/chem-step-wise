@@ -74,18 +74,41 @@ class ChemistrySolver {
   }
 
   private analyzeGasLaws(question: string): QuestionAnalysis {
+    const lowerQuestion = question.toLowerCase()
+    let problemType = 'boyles-law' // default
+    
+    // Detect which gas law based on what variables are mentioned
+    const hasPressure = /\bpressure\b|p[₁₂]|\d+(\.\d+)?\s*(atm|kpa|pa|torr|mmhg)/i.test(question)
+    const hasVolume = /\bvolume\b|v[₁₂]|\d+(\.\d+)?\s*(l|ml)\b/i.test(question)
+    const hasTemperature = /\btemperature\b|t[₁₂]|\d+(\.\d+)?\s*k\b|°c|celsius|kelvin/i.test(question)
+    const hasMoles = /\bmol(es)?\b|n\s*=|\d+(\.\d+)?\s*mol\b/i.test(question)
+    
+    const constantT = /constant.*temp|temp.*constant|same.*temp/i.test(question)
+    const constantP = /constant.*pressure|pressure.*constant|same.*pressure/i.test(question)
+    const constantV = /constant.*volume|volume.*constant|same.*volume/i.test(question)
+    
+    // Ideal Gas Law: PV = nRT (has all variables or explicitly mentioned)
+    if (/ideal\s+gas|pv\s*=\s*nrt/i.test(question) || (hasMoles && hasPressure && hasVolume && hasTemperature)) {
+      problemType = 'ideal-gas-law'
+    }
+    // Combined Gas Law: (P₁V₁/T₁) = (P₂V₂/T₂) (3 variables change)
+    else if (hasPressure && hasVolume && hasTemperature && !constantT && !constantP && !constantV) {
+      problemType = 'combined-gas-law'
+    }
+    // Charles's Law: V₁/T₁ = V₂/T₂ (constant pressure)
+    else if (hasVolume && hasTemperature && (constantP || !hasPressure)) {
+      problemType = 'charles-law'
+    }
+    // Gay-Lussac's Law: P₁/T₁ = P₂/T₂ (constant volume)
+    else if (hasPressure && hasTemperature && (constantV || !hasVolume)) {
+      problemType = 'gay-lussacs-law'
+    }
+    // Boyle's Law: P₁V₁ = P₂V₂ (constant temperature)
+    else if (hasPressure && hasVolume && (constantT || !hasTemperature)) {
+      problemType = 'boyles-law'
+    }
+    
     const numbers = this.extractNumbers(question)
-    const hasTemperature = question.toLowerCase().includes('temperature') || question.toLowerCase().includes('k') || question.toLowerCase().includes('°c')
-    const hasPressure = question.toLowerCase().includes('pressure') || question.toLowerCase().includes('atm') || question.toLowerCase().includes('pa')
-    const hasVolume = question.toLowerCase().includes('volume') || question.toLowerCase().includes('l') || question.toLowerCase().includes('ml')
-    const hasMoles = question.toLowerCase().includes('mol') && !question.toLowerCase().includes('molarity')
-
-    let problemType = 'combined-gas-law'
-    if (!hasTemperature && hasPressure && hasVolume) problemType = 'boyles-law'
-    else if (hasTemperature && !hasPressure && hasVolume) problemType = 'charles-law'
-    else if (hasTemperature && hasPressure && !hasVolume) problemType = 'gay-lussacs-law'
-    else if (hasMoles && hasTemperature && (hasPressure || hasVolume)) problemType = 'ideal-gas-law'
-
     return {
       topic: 'gas-laws',
       variables: this.extractGasLawVariables(question, numbers),
@@ -140,44 +163,66 @@ class ChemistrySolver {
   }
 
   private extractGasLawVariables(question: string, numbers: number[]): Record<string, any> {
-    const variables: Record<string, any> = {}
+    const vars: Record<string, any> = {}
     
-    // Extract multiple pressure values for Boyle's Law problems
-    const pressureMatches = question.match(/(\d+\.?\d*)\s*atm/g)
-    if (pressureMatches && pressureMatches.length >= 2) {
-      const pressures = pressureMatches.map(match => parseFloat(match.replace('atm', '').trim()))
-      variables.pressure1 = pressures[0]
-      variables.pressure2 = pressures[1]
-    } else if (pressureMatches && pressureMatches.length === 1) {
-      variables.pressure1 = parseFloat(pressureMatches[0].replace('atm', '').trim())
+    // Extract pressure values with units (convert all to atm)
+    const pressureMatches = question.match(/(\d+\.?\d*)\s*(atm|kpa|pa|torr|mmhg)/gi)
+    if (pressureMatches) {
+      const pressures: number[] = []
+      pressureMatches.forEach(match => {
+        const [, value, unit] = match.match(/(\d+\.?\d*)\s*(\w+)/i) || []
+        let pressure = parseFloat(value)
+        // Convert to atm
+        if (unit.toLowerCase() === 'kpa') pressure /= 101.325
+        else if (unit.toLowerCase() === 'pa') pressure /= 101325
+        else if (unit.toLowerCase() === 'torr' || unit.toLowerCase() === 'mmhg') pressure /= 760
+        pressures.push(pressure)
+      })
+      if (pressures.length >= 1) vars.pressure1 = pressures[0]
+      if (pressures.length >= 2) vars.pressure2 = pressures[1]
     }
     
-    // Extract multiple volume values for Boyle's Law problems  
-    const volumeMatches = question.match(/(\d+\.?\d*)\s*L/g)
-    if (volumeMatches && volumeMatches.length >= 1) {
-      variables.volume1 = parseFloat(volumeMatches[0].replace('L', '').trim())
+    // Extract volume values (convert all to L)
+    const volumeMatches = question.match(/(\d+\.?\d*)\s*(l|ml)\b/gi)
+    if (volumeMatches) {
+      const volumes: number[] = []
+      volumeMatches.forEach(match => {
+        const [, value, unit] = match.match(/(\d+\.?\d*)\s*(\w+)/i) || []
+        let volume = parseFloat(value)
+        if (unit.toLowerCase() === 'ml') volume /= 1000
+        volumes.push(volume)
+      })
+      if (volumes.length >= 1) vars.volume1 = volumes[0]
+      if (volumes.length >= 2) vars.volume2 = volumes[1]
     }
     
-    // Extract temperature
-    if (question.includes('K')) {
-      const tempMatches = question.match(/(\d+\.?\d*)\s*K/g)
-      if (tempMatches) {
-        variables.temperature1 = parseFloat(tempMatches[0].replace('K', '').trim())
-        if (tempMatches.length > 1) {
-          variables.temperature2 = parseFloat(tempMatches[1].replace('K', '').trim())
-        }
-      }
+    // Extract temperature values (convert all to K)
+    const tempKMatches = question.match(/(\d+\.?\d*)\s*k\b/gi)
+    const tempCMatches = question.match(/(\d+\.?\d*)\s*°?c\b/gi)
+    const temperatures: number[] = []
+    
+    if (tempKMatches) {
+      tempKMatches.forEach(match => {
+        temperatures.push(parseFloat(match))
+      })
     }
+    if (tempCMatches) {
+      tempCMatches.forEach(match => {
+        const celsius = parseFloat(match)
+        temperatures.push(celsius + 273.15)
+      })
+    }
+    
+    if (temperatures.length >= 1) vars.temperature1 = temperatures[0]
+    if (temperatures.length >= 2) vars.temperature2 = temperatures[1]
     
     // Extract moles
-    if (question.includes('mol')) {
-      const molMatches = question.match(/(\d+\.?\d*)\s*mol/g)
-      if (molMatches) {
-        variables.moles = parseFloat(molMatches[0].replace('mol', '').trim())
-      }
+    const molesMatch = question.match(/(\d+\.?\d*)\s*mol\b/i)
+    if (molesMatch) {
+      vars.moles = parseFloat(molesMatch[1])
     }
     
-    return variables
+    return vars
   }
 
   private extractStoichiometryVariables(question: string, numbers: number[]): Record<string, any> {
@@ -329,6 +374,10 @@ class ChemistrySolver {
         return this.solveBoyles(question, variables)
       case 'charles-law':
         return this.solveCharles(question, variables)
+      case 'gay-lussacs-law':
+        return this.solveGayLussacs(question, variables)
+      case 'combined-gas-law':
+        return this.solveCombinedGas(question, variables)
       case 'ideal-gas-law':
         return this.solveIdealGas(question, variables)
       default:
@@ -337,47 +386,70 @@ class ChemistrySolver {
   }
 
   private solveBoyles(question: string, variables: Record<string, any>): SolverResponse {
-    // Extract numerical values from the question
     const numbers = this.extractNumbers(question)
     const gasValues = this.extractGasLawVariables(question, numbers)
     
-    // For your specific question: "A gas sample occupies 3.50 L at a pressure of 2.00 atm. If the pressure is increased to 3.50 atm while the temperature remains constant, what will be the new volume of the gas?"
-    const v1 = gasValues.volume1 || numbers[0] // 3.50 L
-    const p1 = gasValues.pressure1 || numbers[1] // 2.00 atm  
-    const p2 = gasValues.pressure2 || numbers[2] // 3.50 atm
+    const p1 = gasValues.pressure1 || numbers[0]
+    const v1 = gasValues.volume1 || numbers[1]
+    const p2 = gasValues.pressure2 || numbers[2]
+    const v2 = gasValues.volume2
     
-    // Calculate V2 using Boyle's Law: P1V1 = P2V2 -> V2 = P1V1/P2
-    const v2 = (p1 * v1) / p2
+    // Determine what we're solving for
+    let calculated: number
+    let calculatedVar: string
+    let formula: string
+    let substitution: string
+    
+    if (!v2) {
+      calculated = (p1 * v1) / p2
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (P₁ × V₁) / P₂'
+      substitution = `V₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L) / ${p2.toFixed(2)} atm`
+    } else if (!p2) {
+      calculated = (p1 * v1) / v2
+      calculatedVar = 'P₂'
+      formula = 'P₂ = (P₁ × V₁) / V₂'
+      substitution = `P₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L) / ${v2.toFixed(2)} L`
+    } else {
+      calculated = (p1 * v1) / p2
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (P₁ × V₁) / P₂'
+      substitution = `V₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L) / ${p2.toFixed(2)} atm`
+    }
     
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
         title: "Identify the Gas Law",
-        description: "This is a Boyle's Law problem since temperature is constant",
+        description: "This is a Boyle's Law problem since temperature remains constant",
         formula: "P₁V₁ = P₂V₂",
-        explanation: "Boyle's Law states that pressure and volume are inversely proportional at constant temperature"
+        explanation: "Boyle's Law: At constant temperature, pressure and volume are inversely proportional. When pressure increases, volume decreases proportionally, and vice versa."
       },
       {
         stepNumber: 2,
-        title: "Identify Given Values",
-        description: "Extract the known variables from the problem",
-        substitution: `P₁ = ${p1} atm, V₁ = ${v1} L, P₂ = ${p2} atm`,
-        result: "We need to find V₂"
+        title: "List Known Values",
+        description: "Extract all given variables from the problem",
+        substitution: v2 
+          ? `P₁ = ${p1.toFixed(2)} atm\nV₁ = ${v1.toFixed(2)} L\nP₂ = ${p2.toFixed(2)} atm\nV₂ = ${v2.toFixed(2)} L`
+          : p2 
+            ? `P₁ = ${p1.toFixed(2)} atm\nV₁ = ${v1.toFixed(2)} L\nP₂ = ${p2.toFixed(2)} atm`
+            : `P₁ = ${p1.toFixed(2)} atm\nV₁ = ${v1.toFixed(2)} L\nV₂ = ${v2?.toFixed(2) || '?'} L`,
+        result: `Find: ${calculatedVar}`
       },
       {
         stepNumber: 3,
-        title: "Rearrange the Formula",
-        description: "Solve for the unknown variable V₂",
-        formula: "V₂ = (P₁ × V₁) / P₂",
-        explanation: "Rearrange Boyle's Law to isolate V₂"
+        title: "Rearrange Formula",
+        description: `Solve Boyle's Law for ${calculatedVar}`,
+        formula: formula,
+        explanation: `Isolate ${calculatedVar} by rearranging P₁V₁ = P₂V₂`
       },
       {
         stepNumber: 4,
-        title: "Substitute Values",
-        description: "Insert the known values into the formula",
-        substitution: `V₂ = (${p1} atm × ${v1} L) / ${p2} atm`,
-        calculation: `V₂ = ${p1 * v1} / ${p2}`,
-        result: `V₂ = ${v2.toFixed(2)} L`
+        title: "Substitute and Calculate",
+        description: "Insert known values and compute the result",
+        substitution: substitution,
+        calculation: `${calculatedVar} = ${(p1 * v1).toFixed(2)} / ${(p2 || v2).toFixed(2)} = ${calculated.toFixed(2)}`,
+        result: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('P') ? 'atm' : 'L'}`
       }
     ]
 
@@ -385,43 +457,82 @@ class ChemistrySolver {
       success: true,
       detectedTopic: "Gas Laws - Boyle's Law",
       canonicalProblem: question,
-      variables: {
-        pressure1: { name: "Initial Pressure", symbol: "P₁", value: p1, unit: "atm", description: "Initial pressure", required: true },
-        volume1: { name: "Initial Volume", symbol: "V₁", value: v1, unit: "L", description: "Initial volume", required: true },
-        pressure2: { name: "Final Pressure", symbol: "P₂", value: p2, unit: "atm", description: "Final pressure", required: true },
-        volume2: { name: "Final Volume", symbol: "V₂", value: v2, unit: "L", description: "Final volume (calculated)", required: false }
-      },
       steps,
-      finalAnswer: `The new volume of the gas will be ${v2.toFixed(2)} L`,
-      latexEquations: ["P_1V_1 = P_2V_2", "V_2 = \\frac{P_1 V_1}{P_2}"],
+      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('P') ? 'atm' : 'L'}`,
+      latexEquations: ["P_1V_1 = P_2V_2"],
       confidence: 0.95,
-      interpretation: "This problem uses Boyle's Law to find the new volume when pressure changes at constant temperature."
+      interpretation: "Boyle's Law shows the inverse relationship between pressure and volume at constant temperature."
     }
   }
 
   private solveCharles(question: string, variables: Record<string, any>): SolverResponse {
+    const numbers = this.extractNumbers(question)
+    const gasValues = this.extractGasLawVariables(question, numbers)
+    
+    const v1 = gasValues.volume1 || numbers[0]
+    const t1 = gasValues.temperature1 || numbers[1]
+    const t2 = gasValues.temperature2 || numbers[2]
+    const v2 = gasValues.volume2
+    
+    let calculated: number
+    let calculatedVar: string
+    let formula: string
+    let substitution: string
+    
+    if (!v2) {
+      calculated = (v1 * t2) / t1
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (V₁ × T₂) / T₁'
+      substitution = `V₂ = (${v1.toFixed(2)} L × ${t2.toFixed(2)} K) / ${t1.toFixed(2)} K`
+    } else if (!t2) {
+      calculated = (v2 * t1) / v1
+      calculatedVar = 'T₂'
+      formula = 'T₂ = (V₂ × T₁) / V₁'
+      substitution = `T₂ = (${v2.toFixed(2)} L × ${t1.toFixed(2)} K) / ${v1.toFixed(2)} L`
+    } else {
+      calculated = (v1 * t2) / t1
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (V₁ × T₂) / T₁'
+      substitution = `V₂ = (${v1.toFixed(2)} L × ${t2.toFixed(2)} K) / ${t1.toFixed(2)} K`
+    }
+    
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
         title: "Identify the Gas Law",
-        description: "This is a Charles's Law problem since pressure is constant",
+        description: "This is a Charles's Law problem since pressure remains constant",
         formula: "V₁/T₁ = V₂/T₂",
-        explanation: "Charles's Law states that volume and temperature are directly proportional at constant pressure"
+        explanation: "Charles's Law: At constant pressure, volume and temperature are directly proportional. When temperature increases, volume increases proportionally."
       },
       {
         stepNumber: 2,
-        title: "Convert Temperature",
-        description: "Convert Celsius to Kelvin if needed",
+        title: "Verify Temperature Units",
+        description: "Ensure all temperatures are in Kelvin",
         formula: "K = °C + 273.15",
-        explanation: "Gas law calculations require absolute temperature in Kelvin"
+        explanation: "Gas laws require absolute temperature. All values converted to Kelvin.",
+        result: `T₁ = ${t1.toFixed(2)} K, T₂ = ${t2?.toFixed(2) || '?'} K`
       },
       {
         stepNumber: 3,
-        title: "Apply Charles's Law",
-        description: "Use the relationship between volume and temperature",
-        formula: "V₁/T₁ = V₂/T₂",
-        substitution: "Substitute the known values",
-        result: "Calculate the unknown variable"
+        title: "List Known Values",
+        description: "Extract all given variables",
+        substitution: `V₁ = ${v1.toFixed(2)} L\nT₁ = ${t1.toFixed(2)} K\n${v2 ? `V₂ = ${v2.toFixed(2)} L\n` : ''}${t2 ? `T₂ = ${t2.toFixed(2)} K` : ''}`,
+        result: `Find: ${calculatedVar}`
+      },
+      {
+        stepNumber: 4,
+        title: "Rearrange Formula",
+        description: `Solve Charles's Law for ${calculatedVar}`,
+        formula: formula,
+        explanation: `Isolate ${calculatedVar} by cross-multiplying V₁/T₁ = V₂/T₂`
+      },
+      {
+        stepNumber: 5,
+        title: "Substitute and Calculate",
+        description: "Insert known values and compute",
+        substitution: substitution,
+        calculation: `${calculatedVar} = ${calculated.toFixed(2)}`,
+        result: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : 'L'}`
       }
     ]
 
@@ -430,37 +541,266 @@ class ChemistrySolver {
       detectedTopic: "Gas Laws - Charles's Law",
       canonicalProblem: question,
       steps,
-      finalAnswer: "See calculation steps above",
+      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : 'L'}`,
       latexEquations: ["\\frac{V_1}{T_1} = \\frac{V_2}{T_2}"],
-      confidence: 0.85,
-      interpretation: "This problem uses Charles's Law to relate volume and temperature at constant pressure."
+      confidence: 0.95,
+      interpretation: "Charles's Law demonstrates the direct relationship between volume and temperature at constant pressure."
+    }
+  }
+
+  private solveGayLussacs(question: string, variables: Record<string, any>): SolverResponse {
+    const numbers = this.extractNumbers(question)
+    const gasValues = this.extractGasLawVariables(question, numbers)
+    
+    const p1 = gasValues.pressure1 || numbers[0]
+    const t1 = gasValues.temperature1 || numbers[1]
+    const t2 = gasValues.temperature2 || numbers[2]
+    const p2 = gasValues.pressure2
+    
+    let calculated: number
+    let calculatedVar: string
+    let formula: string
+    let substitution: string
+    
+    if (!p2) {
+      calculated = (p1 * t2) / t1
+      calculatedVar = 'P₂'
+      formula = 'P₂ = (P₁ × T₂) / T₁'
+      substitution = `P₂ = (${p1.toFixed(2)} atm × ${t2.toFixed(2)} K) / ${t1.toFixed(2)} K`
+    } else if (!t2) {
+      calculated = (p2 * t1) / p1
+      calculatedVar = 'T₂'
+      formula = 'T₂ = (P₂ × T₁) / P₁'
+      substitution = `T₂ = (${p2.toFixed(2)} atm × ${t1.toFixed(2)} K) / ${p1.toFixed(2)} atm`
+    } else {
+      calculated = (p1 * t2) / t1
+      calculatedVar = 'P₂'
+      formula = 'P₂ = (P₁ × T₂) / T₁'
+      substitution = `P₂ = (${p1.toFixed(2)} atm × ${t2.toFixed(2)} K) / ${t1.toFixed(2)} K`
+    }
+    
+    const steps: SolutionStep[] = [
+      {
+        stepNumber: 1,
+        title: "Identify the Gas Law",
+        description: "This is a Gay-Lussac's Law problem since volume remains constant",
+        formula: "P₁/T₁ = P₂/T₂",
+        explanation: "Gay-Lussac's Law: At constant volume, pressure and temperature are directly proportional. When temperature increases, pressure increases proportionally."
+      },
+      {
+        stepNumber: 2,
+        title: "Verify Temperature Units",
+        description: "Ensure all temperatures are in Kelvin",
+        formula: "K = °C + 273.15",
+        explanation: "Gas laws require absolute temperature in Kelvin",
+        result: `T₁ = ${t1.toFixed(2)} K, T₂ = ${t2?.toFixed(2) || '?'} K`
+      },
+      {
+        stepNumber: 3,
+        title: "List Known Values",
+        description: "Extract all given variables",
+        substitution: `P₁ = ${p1.toFixed(2)} atm\nT₁ = ${t1.toFixed(2)} K\n${p2 ? `P₂ = ${p2.toFixed(2)} atm\n` : ''}${t2 ? `T₂ = ${t2.toFixed(2)} K` : ''}`,
+        result: `Find: ${calculatedVar}`
+      },
+      {
+        stepNumber: 4,
+        title: "Rearrange Formula",
+        description: `Solve Gay-Lussac's Law for ${calculatedVar}`,
+        formula: formula,
+        explanation: `Isolate ${calculatedVar} by cross-multiplying P₁/T₁ = P₂/T₂`
+      },
+      {
+        stepNumber: 5,
+        title: "Substitute and Calculate",
+        description: "Insert known values and compute",
+        substitution: substitution,
+        calculation: `${calculatedVar} = ${calculated.toFixed(2)}`,
+        result: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : 'atm'}`
+      }
+    ]
+
+    return {
+      success: true,
+      detectedTopic: "Gas Laws - Gay-Lussac's Law",
+      canonicalProblem: question,
+      steps,
+      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : 'atm'}`,
+      latexEquations: ["\\frac{P_1}{T_1} = \\frac{P_2}{T_2}"],
+      confidence: 0.95,
+      interpretation: "Gay-Lussac's Law demonstrates the direct relationship between pressure and temperature at constant volume."
+    }
+  }
+
+  private solveCombinedGas(question: string, variables: Record<string, any>): SolverResponse {
+    const numbers = this.extractNumbers(question)
+    const gasValues = this.extractGasLawVariables(question, numbers)
+    
+    const p1 = gasValues.pressure1 || numbers[0]
+    const v1 = gasValues.volume1 || numbers[1]
+    const t1 = gasValues.temperature1 || numbers[2]
+    const p2 = gasValues.pressure2 || numbers[3]
+    const v2 = gasValues.volume2 || numbers[4]
+    const t2 = gasValues.temperature2 || numbers[5]
+    
+    // Determine what we're solving for
+    let calculated: number
+    let calculatedVar: string
+    let formula: string
+    let substitution: string
+    
+    if (!v2) {
+      calculated = (p1 * v1 * t2) / (p2 * t1)
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (P₁ × V₁ × T₂) / (P₂ × T₁)'
+      substitution = `V₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L × ${t2.toFixed(2)} K) / (${p2.toFixed(2)} atm × ${t1.toFixed(2)} K)`
+    } else if (!p2) {
+      calculated = (p1 * v1 * t2) / (v2 * t1)
+      calculatedVar = 'P₂'
+      formula = 'P₂ = (P₁ × V₁ × T₂) / (V₂ × T₁)'
+      substitution = `P₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L × ${t2.toFixed(2)} K) / (${v2.toFixed(2)} L × ${t1.toFixed(2)} K)`
+    } else if (!t2) {
+      calculated = (p2 * v2 * t1) / (p1 * v1)
+      calculatedVar = 'T₂'
+      formula = 'T₂ = (P₂ × V₂ × T₁) / (P₁ × V₁)'
+      substitution = `T₂ = (${p2.toFixed(2)} atm × ${v2.toFixed(2)} L × ${t1.toFixed(2)} K) / (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L)`
+    } else {
+      calculated = (p1 * v1 * t2) / (p2 * t1)
+      calculatedVar = 'V₂'
+      formula = 'V₂ = (P₁ × V₁ × T₂) / (P₂ × T₁)'
+      substitution = `V₂ = (${p1.toFixed(2)} atm × ${v1.toFixed(2)} L × ${t2.toFixed(2)} K) / (${p2.toFixed(2)} atm × ${t1.toFixed(2)} K)`
+    }
+    
+    const steps: SolutionStep[] = [
+      {
+        stepNumber: 1,
+        title: "Identify the Gas Law",
+        description: "This is a Combined Gas Law problem where P, V, and T all change",
+        formula: "(P₁V₁)/T₁ = (P₂V₂)/T₂",
+        explanation: "Combined Gas Law: Used when pressure, volume, and temperature all change. It combines Boyle's, Charles's, and Gay-Lussac's laws."
+      },
+      {
+        stepNumber: 2,
+        title: "Verify Temperature Units",
+        description: "Ensure all temperatures are in Kelvin",
+        formula: "K = °C + 273.15",
+        explanation: "Gas laws require absolute temperature",
+        result: `T₁ = ${t1.toFixed(2)} K, T₂ = ${t2?.toFixed(2) || '?'} K`
+      },
+      {
+        stepNumber: 3,
+        title: "List Known Values",
+        description: "Extract all given variables",
+        substitution: `P₁ = ${p1.toFixed(2)} atm\nV₁ = ${v1.toFixed(2)} L\nT₁ = ${t1.toFixed(2)} K\n${p2 ? `P₂ = ${p2.toFixed(2)} atm\n` : ''}${v2 ? `V₂ = ${v2.toFixed(2)} L\n` : ''}${t2 ? `T₂ = ${t2.toFixed(2)} K` : ''}`,
+        result: `Find: ${calculatedVar}`
+      },
+      {
+        stepNumber: 4,
+        title: "Rearrange Formula",
+        description: `Solve Combined Gas Law for ${calculatedVar}`,
+        formula: formula,
+        explanation: `Isolate ${calculatedVar} from (P₁V₁)/T₁ = (P₂V₂)/T₂`
+      },
+      {
+        stepNumber: 5,
+        title: "Substitute and Calculate",
+        description: "Insert known values and compute",
+        substitution: substitution,
+        calculation: `${calculatedVar} = ${calculated.toFixed(2)}`,
+        result: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : calculatedVar.includes('P') ? 'atm' : 'L'}`
+      }
+    ]
+
+    return {
+      success: true,
+      detectedTopic: "Gas Laws - Combined Gas Law",
+      canonicalProblem: question,
+      steps,
+      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('T') ? 'K' : calculatedVar.includes('P') ? 'atm' : 'L'}`,
+      latexEquations: ["\\frac{P_1V_1}{T_1} = \\frac{P_2V_2}{T_2}"],
+      confidence: 0.95,
+      interpretation: "Combined Gas Law accounts for simultaneous changes in pressure, volume, and temperature."
     }
   }
 
   private solveIdealGas(question: string, variables: Record<string, any>): SolverResponse {
+    const numbers = this.extractNumbers(question)
+    const gasValues = this.extractGasLawVariables(question, numbers)
+    
+    const p = gasValues.pressure1 || numbers[0]
+    const v = gasValues.volume1 || numbers[1]
+    const n = gasValues.moles || numbers[2]
+    const t = gasValues.temperature1 || numbers[3]
+    const R = 0.0821 // L·atm/(mol·K)
+    
+    // Determine what we're solving for
+    let calculated: number
+    let calculatedVar: string
+    let formula: string
+    let substitution: string
+    
+    if (!n && p && v && t) {
+      calculated = (p * v) / (R * t)
+      calculatedVar = 'n (moles)'
+      formula = 'n = PV / RT'
+      substitution = `n = (${p.toFixed(2)} atm × ${v.toFixed(2)} L) / (${R} L·atm/(mol·K) × ${t.toFixed(2)} K)`
+    } else if (!v && p && n && t) {
+      calculated = (n * R * t) / p
+      calculatedVar = 'V (volume)'
+      formula = 'V = nRT / P'
+      substitution = `V = (${n.toFixed(2)} mol × ${R} L·atm/(mol·K) × ${t.toFixed(2)} K) / ${p.toFixed(2)} atm`
+    } else if (!p && v && n && t) {
+      calculated = (n * R * t) / v
+      calculatedVar = 'P (pressure)'
+      formula = 'P = nRT / V'
+      substitution = `P = (${n.toFixed(2)} mol × ${R} L·atm/(mol·K) × ${t.toFixed(2)} K) / ${v.toFixed(2)} L`
+    } else if (!t && p && v && n) {
+      calculated = (p * v) / (n * R)
+      calculatedVar = 'T (temperature)'
+      formula = 'T = PV / nR'
+      substitution = `T = (${p.toFixed(2)} atm × ${v.toFixed(2)} L) / (${n.toFixed(2)} mol × ${R} L·atm/(mol·K))`
+    } else {
+      calculated = (n * R * t) / p
+      calculatedVar = 'V (volume)'
+      formula = 'V = nRT / P'
+      substitution = `V = (${n.toFixed(2)} mol × ${R} L·atm/(mol·K) × ${t.toFixed(2)} K) / ${p.toFixed(2)} atm`
+    }
+    
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
         title: "Identify the Gas Law",
         description: "This is an Ideal Gas Law problem",
         formula: "PV = nRT",
-        explanation: "The ideal gas law relates pressure, volume, moles, and temperature"
+        explanation: "Ideal Gas Law: Relates pressure (P), volume (V), moles (n), gas constant (R), and temperature (T) for ideal gases."
       },
       {
         stepNumber: 2,
-        title: "Identify Given Values",
-        description: "List the known quantities",
-        substitution: "Extract values from the problem statement",
-        result: "Known values identified"
+        title: "Identify Gas Constant",
+        description: "Use appropriate R value for given units",
+        substitution: "R = 0.0821 L·atm/(mol·K)",
+        explanation: "This R value is used when P is in atm, V in L, and T in K"
       },
       {
         stepNumber: 3,
-        title: "Apply Ideal Gas Law",
-        description: "Use PV = nRT to solve for the unknown",
-        formula: "PV = nRT",
-        substitution: "R = 0.0821 L·atm/mol·K",
-        calculation: "Substitute values and solve",
-        result: "Calculate the unknown variable"
+        title: "List Known Values",
+        description: "Extract all given variables",
+        substitution: `${p ? `P = ${p.toFixed(2)} atm\n` : ''}${v ? `V = ${v.toFixed(2)} L\n` : ''}${n ? `n = ${n.toFixed(2)} mol\n` : ''}${t ? `T = ${t.toFixed(2)} K` : ''}`,
+        result: `Find: ${calculatedVar}`
+      },
+      {
+        stepNumber: 4,
+        title: "Rearrange Formula",
+        description: `Solve Ideal Gas Law for ${calculatedVar}`,
+        formula: formula,
+        explanation: `Isolate ${calculatedVar} from PV = nRT`
+      },
+      {
+        stepNumber: 5,
+        title: "Substitute and Calculate",
+        description: "Insert known values and compute",
+        substitution: substitution,
+        calculation: `${calculatedVar.split(' ')[0]} = ${calculated.toFixed(2)}`,
+        result: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('mol') ? 'mol' : calculatedVar.includes('volume') ? 'L' : calculatedVar.includes('pressure') ? 'atm' : 'K'}`
       }
     ]
 
@@ -469,10 +809,10 @@ class ChemistrySolver {
       detectedTopic: "Gas Laws - Ideal Gas Law",
       canonicalProblem: question,
       steps,
-      finalAnswer: "See calculation steps above",
+      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${calculatedVar.includes('mol') ? 'mol' : calculatedVar.includes('volume') ? 'L' : calculatedVar.includes('pressure') ? 'atm' : 'K'}`,
       latexEquations: ["PV = nRT"],
-      confidence: 0.90,
-      interpretation: "This problem uses the ideal gas law to relate pressure, volume, moles, and temperature."
+      confidence: 0.95,
+      interpretation: "Ideal Gas Law provides a comprehensive relationship between all gas properties."
     }
   }
 
