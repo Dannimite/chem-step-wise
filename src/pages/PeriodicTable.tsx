@@ -253,21 +253,109 @@ const PeriodicTable = () => {
                 <CardHeader>
                   <CardTitle>Elements</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
-                    {filteredElements.map((element) => (
-                      <Button
-                        key={element.symbol}
-                        variant={selectedElement.symbol === element.symbol ? "default" : "outline"}
-                        className={`h-16 w-full p-1 flex flex-col items-center justify-center text-xs transition-all hover:scale-105 ${
-                          categoryColors[element.category as keyof typeof categoryColors]
-                        } ${stateColors[element.state as keyof typeof stateColors]}`}
-                        onClick={() => setSelectedElement(element)}
-                      >
-                        <div className="font-bold text-sm">{element.symbol}</div>
-                        <div className="text-xs opacity-70">{element.atomicNumber}</div>
-                      </Button>
-                    ))}
+                <CardContent className="overflow-x-auto">
+                  {/* Main Periodic Table Grid */}
+                  <div className="grid grid-cols-18 gap-1 min-w-[900px]">
+                    {Array.from({ length: 7 }, (_, periodIndex) => {
+                      const period = periodIndex + 1;
+                      return Array.from({ length: 18 }, (_, groupIndex) => {
+                        const group = groupIndex + 1;
+                        
+                        // Find element for this position
+                        let element = filteredElements.find(el => 
+                          el.period === period && el.group === group && 
+                          el.category !== 'lanthanide' && el.category !== 'actinide'
+                        );
+                        
+                        // Special handling for lanthanides and actinides placeholder
+                        if (period === 6 && group === 3) {
+                          // Placeholder for lanthanides
+                          return (
+                            <div key={`${period}-${group}-placeholder`} 
+                                 className="h-14 w-14 border border-dashed border-violet-400 rounded flex items-center justify-center text-xs text-muted-foreground bg-violet-500/10">
+                              57-71
+                            </div>
+                          );
+                        }
+                        if (period === 7 && group === 3) {
+                          // Placeholder for actinides
+                          return (
+                            <div key={`${period}-${group}-placeholder`} 
+                                 className="h-14 w-14 border border-dashed border-rose-400 rounded flex items-center justify-center text-xs text-muted-foreground bg-rose-500/10">
+                              89-103
+                            </div>
+                          );
+                        }
+                        
+                        if (element) {
+                          return (
+                            <Button
+                              key={element.symbol}
+                              variant={selectedElement.symbol === element.symbol ? "default" : "outline"}
+                              className={`h-14 w-14 p-1 flex flex-col items-center justify-center text-xs transition-all hover:scale-105 ${
+                                categoryColors[element.category as keyof typeof categoryColors]
+                              } ${stateColors[element.state as keyof typeof stateColors]}`}
+                              onClick={() => setSelectedElement(element)}
+                            >
+                              <div className="font-bold text-sm">{element.symbol}</div>
+                              <div className="text-xs opacity-70">{element.atomicNumber}</div>
+                            </Button>
+                          );
+                        }
+                        
+                        // Empty cells
+                        return <div key={`${period}-${group}-empty`} className="h-14 w-14" />;
+                      });
+                    })}
+                  </div>
+                  
+                  {/* Lanthanides and Actinides */}
+                  <div className="mt-6 space-y-2">
+                    {/* Lanthanides */}
+                    <div className="flex gap-1">
+                      <div className="h-14 w-14 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                        Lanthanides
+                      </div>
+                      {filteredElements
+                        .filter(el => el.category === 'lanthanide')
+                        .sort((a, b) => a.atomicNumber - b.atomicNumber)
+                        .map((element) => (
+                          <Button
+                            key={element.symbol}
+                            variant={selectedElement.symbol === element.symbol ? "default" : "outline"}
+                            className={`h-14 w-14 p-1 flex flex-col items-center justify-center text-xs transition-all hover:scale-105 ${
+                              categoryColors[element.category as keyof typeof categoryColors]
+                            } ${stateColors[element.state as keyof typeof stateColors]}`}
+                            onClick={() => setSelectedElement(element)}
+                          >
+                            <div className="font-bold text-sm">{element.symbol}</div>
+                            <div className="text-xs opacity-70">{element.atomicNumber}</div>
+                          </Button>
+                        ))}
+                    </div>
+                    
+                    {/* Actinides */}
+                    <div className="flex gap-1">
+                      <div className="h-14 w-14 flex items-center justify-center text-xs font-medium text-muted-foreground">
+                        Actinides
+                      </div>
+                      {filteredElements
+                        .filter(el => el.category === 'actinide')
+                        .sort((a, b) => a.atomicNumber - b.atomicNumber)
+                        .map((element) => (
+                          <Button
+                            key={element.symbol}
+                            variant={selectedElement.symbol === element.symbol ? "default" : "outline"}
+                            className={`h-14 w-14 p-1 flex flex-col items-center justify-center text-xs transition-all hover:scale-105 ${
+                              categoryColors[element.category as keyof typeof categoryColors]
+                            } ${stateColors[element.state as keyof typeof stateColors]}`}
+                            onClick={() => setSelectedElement(element)}
+                          >
+                            <div className="font-bold text-sm">{element.symbol}</div>
+                            <div className="text-xs opacity-70">{element.atomicNumber}</div>
+                          </Button>
+                        ))}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
