@@ -794,8 +794,14 @@ class ChemistrySolver {
         stepNumber: tempCelsius !== null ? 4 : 3,
         title: "Calculate Step-by-Step",
         description: "Solve numerator and denominator separately, then divide",
-        calculation: `Numerator: ${numeratorCalc}\n\nDenominator: ${denominatorCalc}\n\nNow divide:\nn = ${numerator.toFixed(2)} / ${denominator.toFixed(6)} = ${calculated.toFixed(4)} mol`,
-        result: `n = ${calculated.toFixed(4)} mol`
+        calculation: `Numerator:\n${numeratorCalc}\n\nDenominator:\n${denominatorCalc}\n\nNow divide:\nn = ${numerator.toFixed(1)} / ${denominator.toFixed(6)} = ${calculated.toFixed(4)} mol`
+      })
+      
+      steps.push({
+        stepNumber: tempCelsius !== null ? 5 : 4,
+        title: "✅ Final Answer",
+        description: "Round to appropriate significant figures",
+        result: `n = ${calculated.toFixed(2)} mol of nitrogen gas`
       })
       
     } else if (!v && p && n && t) {
