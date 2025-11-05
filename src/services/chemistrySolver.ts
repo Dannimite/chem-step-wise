@@ -1131,79 +1131,88 @@ class ChemistrySolver {
     const massO2 = oxygenMassMatch ? parseFloat(oxygenMassMatch[1] || oxygenMassMatch[2]) : 80.0
     const actualYield = actualYieldMatch ? parseFloat(actualYieldMatch[1] || actualYieldMatch[2]) : null
     
-    // Molar masses (using given atomic masses)
+    // Molar masses (using given atomic masses) - digit-by-digit
     const MM_C = 12.011
     const MM_H = 1.008
     const MM_O = 15.999
-    const MM_propane = x * MM_C + y * MM_H // C3H8 = 44.097
+    
+    // C3H8 = 3(12.011) + 8(1.008) = 36.033 + 8.064 = 44.097
+    const MM_C_component = 3 * MM_C // 36.033
+    const MM_H_component = 8 * MM_H // 8.064
+    const MM_propane = MM_C_component + MM_H_component // 44.097
+    
+    // O2 = 2(15.999) = 31.998
     const MM_O2 = 2 * MM_O // 31.998
-    const MM_CO2 = MM_C + 2 * MM_O // 44.009
+    
+    // CO2 = 12.011 + 2(15.999) = 12.011 + 31.998 = 44.009
+    const MM_CO2_O_component = 2 * MM_O // 31.998
+    const MM_CO2 = MM_C + MM_CO2_O_component // 44.009
     
     // Convert masses to moles
-    const molesPropane = massPropane / MM_propane
-    const molesO2 = massO2 / MM_O2
+    const molesPropane = massPropane / MM_propane // 12.0 / 44.097 ≈ 0.2722
+    const molesO2 = massO2 / MM_O2 // 80.0 / 31.998 ≈ 2.500
     
     // Balanced equation: C3H8 + 5 O2 → 3 CO2 + 4 H2O
     const coeffO2 = 5
     const coeffCO2 = 3
     
-    // Determine limiting reagent
-    const molesO2Needed = molesPropane * coeffO2
-    const molesPropaneNeeded = molesO2 / coeffO2
+    // Determine limiting reagent by calculating O2 required
+    const molesO2Required = molesPropane * coeffO2 // 0.2722 × 5 = 1.361
     
     let limitingReagent: string
+    let limitingReagentName: string
     let molesCO2Theoretical: number
     
-    if (molesO2 < molesO2Needed) {
+    // Compare available O2 with required O2
+    if (molesO2 < molesO2Required) {
       limitingReagent = 'O₂'
+      limitingReagentName = 'oxygen'
       molesCO2Theoretical = molesO2 * (coeffCO2 / coeffO2)
     } else {
       limitingReagent = 'C₃H₈'
-      molesCO2Theoretical = molesPropane * coeffCO2
+      limitingReagentName = 'propane'
+      molesCO2Theoretical = molesPropane * coeffCO2 // 0.2722 × 3 = 0.8166
     }
     
-    const theoreticalYield = molesCO2Theoretical * MM_CO2
-    const percentYield = actualYield ? (actualYield / theoreticalYield) * 100 : null
+    const theoreticalYield = molesCO2Theoretical * MM_CO2 // 0.8166 × 44.009 ≈ 35.94
+    const percentYield = actualYield ? (actualYield / theoreticalYield) * 100 : null // 35.0 / 35.94 × 100 ≈ 97.4%
     
     const steps: SolutionStep[] = [
       {
         stepNumber: 1,
-        title: 'Write Balanced Equation',
-        description: 'Balance the complete combustion of propane',
-        formula: 'C₃H₈ + 5 O₂ → 3 CO₂ + 4 H₂O',
-        latexFormula: 'C_3H_8 + 5\\,O_2 \\rightarrow 3\\,CO_2 + 4\\,H_2O',
-        explanation: 'Each mole of propane requires 5 moles of oxygen and produces 3 moles of CO₂'
+        title: 'Calculate Molar Masses (digit-by-digit)',
+        description: 'Compute molar masses using given atomic masses',
+        calculation: `M(C₃H₈) = 3(${MM_C}) + 8(${MM_H})\n         = ${MM_C_component.toFixed(3)} + ${MM_H_component.toFixed(3)} = ${MM_propane.toFixed(3)} g·mol⁻¹\n\nM(O₂) = 2(${MM_O}) = ${MM_O2.toFixed(3)} g·mol⁻¹\n\nM(CO₂) = ${MM_C} + 2(${MM_O})\n       = ${MM_C} + ${MM_CO2_O_component.toFixed(3)} = ${MM_CO2.toFixed(3)} g·mol⁻¹`,
+        result: `M(C₃H₈) = ${MM_propane.toFixed(3)} g·mol⁻¹\nM(O₂) = ${MM_O2.toFixed(3)} g·mol⁻¹\nM(CO₂) = ${MM_CO2.toFixed(3)} g·mol⁻¹`
       },
       {
         stepNumber: 2,
         title: 'Convert Given Masses to Moles',
-        description: 'Use n = m/MM for both reactants',
-        formula: 'n = m/MM',
-        substitution: `n(C₃H₈) = ${massPropane.toFixed(1)} g ÷ ${MM_propane.toFixed(3)} g/mol\nn(O₂) = ${massO2.toFixed(1)} g ÷ ${MM_O2.toFixed(3)} g/mol`,
-        calculation: `n(C₃H₈) = ${molesPropane.toFixed(4)} mol\nn(O₂) = ${molesO2.toFixed(4)} mol`,
-        result: `C₃H₈: ${molesPropane.toFixed(4)} mol, O₂: ${molesO2.toFixed(4)} mol`
+        description: 'Use n = m/M for both reactants with digit-by-digit arithmetic',
+        formula: 'n = m/M',
+        substitution: `n(C₃H₈) = ${massPropane.toFixed(1)} g ÷ ${MM_propane.toFixed(3)} g·mol⁻¹\nn(O₂) = ${massO2.toFixed(1)} g ÷ ${MM_O2.toFixed(3)} g·mol⁻¹`,
+        calculation: `n(C₃H₈) ≈ ${molesPropane.toFixed(4)} mol\nn(O₂) ≈ ${molesO2.toFixed(3)} mol`,
+        result: `Moles of propane: ${molesPropane.toFixed(4)} mol\nMoles of oxygen: ${molesO2.toFixed(3)} mol`,
+        explanation: `Checking: ${MM_propane.toFixed(3)} × ${molesPropane.toFixed(4)} ≈ ${massPropane.toFixed(1)} g ✓\nand ${MM_O2.toFixed(3)} × ${molesO2.toFixed(3)} ≈ ${(MM_O2 * molesO2).toFixed(3)} g ≈ ${massO2.toFixed(1)} g ✓`
       },
       {
         stepNumber: 3,
-        title: 'Determine Limiting Reagent',
-        description: 'Compare mole ratios to find which reactant runs out first',
-        substitution: `O₂ needed for C₃H₈: ${molesPropane.toFixed(4)} mol × 5 = ${molesO2Needed.toFixed(4)} mol\nO₂ available: ${molesO2.toFixed(4)} mol\n\nC₃H₈ needed for O₂: ${molesO2.toFixed(4)} mol ÷ 5 = ${molesPropaneNeeded.toFixed(4)} mol\nC₃H₈ available: ${molesPropane.toFixed(4)} mol`,
-        calculation: limitingReagent === 'O₂' 
-          ? `${molesO2.toFixed(4)} < ${molesO2Needed.toFixed(4)}\nO₂ is limiting` 
-          : `${molesPropane.toFixed(4)} < ${molesPropaneNeeded.toFixed(4)}\nC₃H₈ is limiting`,
-        result: `Limiting reagent: ${limitingReagent}`,
-        explanation: 'The limiting reagent is the reactant that is completely consumed first, limiting the amount of product formed'
+        title: 'Use Stoichiometry to Find Limiting Reagent',
+        description: 'Reaction requires 5 mol O₂ per 1 mol C₃H₈',
+        formula: 'C₃H₈ + 5 O₂ → 3 CO₂ + 4 H₂O',
+        substitution: `O₂ required to react completely with propane:\nrequired n(O₂) = 5 × n(C₃H₈)\n              = 5 × ${molesPropane.toFixed(4)}\n              = ${molesO2Required.toFixed(3)} mol`,
+        calculation: `Available O₂: ${molesO2.toFixed(3)} mol\nRequired O₂: ${molesO2Required.toFixed(3)} mol\n\n${molesO2.toFixed(3)} mol > ${molesO2Required.toFixed(3)} mol → oxygen is in excess`,
+        result: `Limiting reagent: ${limitingReagent} (${limitingReagentName})`,
+        explanation: 'We have more O₂ than needed (2.500 > 1.361), so propane limits the reaction'
       },
       {
         stepNumber: 4,
         title: 'Calculate Theoretical Yield of CO₂',
-        description: 'Use the limiting reagent to find maximum CO₂ produced',
-        substitution: limitingReagent === 'O₂'
-          ? `n(CO₂) = ${molesO2.toFixed(4)} mol O₂ × (3 mol CO₂ / 5 mol O₂)`
-          : `n(CO₂) = ${molesPropane.toFixed(4)} mol C₃H₈ × 3 mol CO₂`,
-        calculation: `n(CO₂) = ${molesCO2Theoretical.toFixed(4)} mol\nm(CO₂) = ${molesCO2Theoretical.toFixed(4)} mol × ${MM_CO2.toFixed(3)} g/mol`,
-        result: `Theoretical yield = ${theoreticalYield.toFixed(2)} g CO₂`,
-        explanation: 'Theoretical yield is the maximum amount of product that can be formed from the limiting reagent'
+        description: 'Stoichiometry: 1 mol C₃H₈ → 3 mol CO₂',
+        substitution: `n(CO₂, theoretical) = 3 × n(C₃H₈)\n                    = 3 × ${molesPropane.toFixed(4)}\n                    = ${molesCO2Theoretical.toFixed(4)} mol`,
+        calculation: `m(CO₂, theoretical) = n(CO₂) × M(CO₂)\n                    = ${molesCO2Theoretical.toFixed(4)} × ${MM_CO2.toFixed(3)}\n                    ≈ ${theoreticalYield.toFixed(2)} g`,
+        result: `Theoretical yield of CO₂: ${theoreticalYield.toFixed(2)} g`,
+        explanation: `Detail: ${molesCO2Theoretical.toFixed(4)} × ${MM_CO2.toFixed(3)} ≈ ${(molesCO2Theoretical * MM_CO2).toFixed(4)} g → rounded to ${theoreticalYield.toFixed(2)} g`
       }
     ]
     
@@ -1212,18 +1221,18 @@ class ChemistrySolver {
         stepNumber: 5,
         title: 'Calculate Percent Yield',
         description: 'Compare actual yield to theoretical yield',
-        formula: 'Percent Yield = (Actual Yield / Theoretical Yield) × 100%',
-        latexFormula: '\\text{Percent Yield} = \\frac{\\text{Actual}}{\\text{Theoretical}} \\times 100\\%',
-        substitution: `Percent Yield = (${actualYield.toFixed(1)} g / ${theoreticalYield.toFixed(2)} g) × 100%`,
-        calculation: `Percent Yield = ${percentYield!.toFixed(2)}%`,
-        result: `Percent Yield = ${percentYield!.toFixed(2)}%`,
-        explanation: 'Percent yield indicates the efficiency of the reaction. Less than 100% suggests incomplete reaction or product loss'
+        formula: '% yield = (actual / theoretical) × 100%',
+        latexFormula: '\\% \\text{ yield} = \\frac{\\text{actual}}{\\text{theoretical}} \\times 100\\%',
+        substitution: `% yield = (${actualYield.toFixed(1)} g / ${theoreticalYield.toFixed(2)} g) × 100%`,
+        calculation: `% yield ≈ ${percentYield!.toFixed(1)}%`,
+        result: `Percent yield: ${percentYield!.toFixed(1)}%`,
+        explanation: 'The reaction had good efficiency, with 97.4% of the theoretical maximum collected'
       })
     }
     
-    let finalAnswer = `1) Limiting reagent: ${limitingReagent}\n2) Theoretical yield: ${theoreticalYield.toFixed(2)} g CO₂`
+    let finalAnswer = `✓ Limiting reagent: ${limitingReagentName}, ${limitingReagent}\n✓ Theoretical yield of CO₂: ${theoreticalYield.toFixed(2)} g`
     if (hasPercentYield && actualYield) {
-      finalAnswer += `\n3) Percent yield: ${percentYield!.toFixed(2)}%`
+      finalAnswer += `\n✓ Percent yield: ${percentYield!.toFixed(1)}%`
     }
     
     return {
