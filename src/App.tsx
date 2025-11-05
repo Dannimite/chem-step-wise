@@ -23,7 +23,6 @@ import Electrolysis from "./pages/Electrolysis";
 import ChemicalEquilibrium from "./pages/ChemicalEquilibrium";
 import AtomicStructure from "./pages/AtomicStructure";
 import LabEquipment from "./pages/LabEquipment";
-import Examples from "./pages/Examples";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -68,7 +67,6 @@ const App = () => (
                   <Route path="/chemical-equilibrium" element={<ChemicalEquilibrium />} />
                   <Route path="/atomic-structure" element={<AtomicStructure />} />
                   <Route path="/lab-equipment" element={<LabEquipment />} />
-                  <Route path="/examples" element={<Examples />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={<NotFound />} />
                 </Routes>

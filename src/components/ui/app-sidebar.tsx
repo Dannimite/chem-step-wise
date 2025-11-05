@@ -127,12 +127,6 @@ const topics = [
     url: "/lab-equipment", 
     icon: Microscope,
     description: "Laboratory tools and instruments"
-  },
-  { 
-    title: "Examples Library", 
-    url: "/examples", 
-    icon: BookOpen,
-    description: "Browse solved problems"
   }
 ]
 
