@@ -149,56 +149,6 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Recent Examples */}
-      <div className="space-y-6">
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold text-foreground">Popular Examples</h2>
-          <p className="text-muted-foreground">Try these commonly asked chemistry problems</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {mockExampleProblems.slice(0, 2).map((example) => (
-            <Card 
-              key={example.id}
-              className="cursor-pointer border-border/30 hover:shadow-md hover:border-primary/30 transition-all duration-200"
-              onClick={() => {
-                // Navigate to appropriate topic page
-                if (example.topicId === 'gas-laws') navigate('/gas-laws')
-                if (example.topicId === 'stoichiometry') navigate('/stoichiometry')
-              }}
-            >
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1 flex-1">
-                      <div className="font-medium text-foreground">{example.title}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">
-                        {example.question}
-                      </div>
-                    </div>
-                    <div className="flex flex-col gap-1 items-end">
-                      <Badge variant="outline" className="text-xs">
-                        {example.topicId}
-                      </Badge>
-                      <Badge 
-                        variant={example.difficulty === 'beginner' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {example.difficulty}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <BookOpen className="h-3 w-3" />
-                    {example.solution.length} solution steps
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
 
       {/* Call to Action */}
       <div className="text-center py-12 space-y-6">
