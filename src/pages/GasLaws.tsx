@@ -55,7 +55,7 @@ const GasLaws = () => {
             { name: "Charles's Law", formula: "V₁/T₁ = V₂/T₂", condition: "Constant P" },
             { name: "Gay-Lussac's Law", formula: "P₁/T₁ = P₂/T₂", condition: "Constant V" },
             { name: "Combined Gas Law", formula: "(P₁V₁)/T₁ = (P₂V₂)/T₂", condition: "n constant" },
-            { name: "Ideal Gas Law", formula: "PV = nRT", condition: "All variables" }
+            { name: "Ideal Gas Law", formula: "PV = nRT", condition: "Coming Soon" }
           ].map((law) => (
             <Card key={law.name} className="border-border/30 hover:shadow-md transition-shadow">
               <CardContent className="p-4">
@@ -273,11 +273,14 @@ const GasLaws = () => {
             </Card>
 
             {/* Ideal Gas Law */}
-            <Card className="shadow-card border-l-4 border-l-primary">
+            <Card className="shadow-card border-l-4 border-l-primary opacity-60">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">5. Ideal Gas Law</CardTitle>
-                  <Badge>All Variables</Badge>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary">Coming Soon</Badge>
+                    <Badge>All Variables</Badge>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
