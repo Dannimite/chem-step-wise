@@ -33,7 +33,7 @@ export function QuestionInput({ onSubmit, isLoading = false, examples = [] }: Qu
     setSelectedTopic(example.topic)
   }
 
-  const sampleQuestions = [
+  const displayExamples = examples.length > 0 ? examples : [
     {
       id: "1",
       title: "Boyle's Law Problem",
@@ -115,8 +115,8 @@ export function QuestionInput({ onSubmit, isLoading = false, examples = [] }: Qu
           </div>
           
           <div className="grid gap-2">
-            {sampleQuestions.map((example) => (
-              <Card 
+            {displayExamples.map((example) => (
+              <Card
                 key={example.id}
                 className="cursor-pointer transition-all duration-200 hover:shadow-md hover:border-primary/30 border-border/30"
                 onClick={() => handleExampleClick(example)}
