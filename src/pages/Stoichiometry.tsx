@@ -95,6 +95,7 @@ const handleQuestionSubmit = async (question: string, topicHint?: string) => {
             <QuestionInput 
               onSubmit={handleQuestionSubmit}
               isLoading={isLoading}
+              placeholder="Example: How many grams of CO2 are produced when 10.0 g of propane (C3H8) burns completely?"
               examples={[
                 {
                   id: "stoich-1",

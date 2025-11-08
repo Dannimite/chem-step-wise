@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 interface QuestionInputProps {
   onSubmit: (question: string, topicHint?: string) => void
   isLoading?: boolean
+  placeholder?: string
   examples?: Array<{
     id: string
     title: string
@@ -17,7 +18,7 @@ interface QuestionInputProps {
   }>
 }
 
-export function QuestionInput({ onSubmit, isLoading = false, examples = [] }: QuestionInputProps) {
+export function QuestionInput({ onSubmit, isLoading = false, placeholder = "Example: If 2.0 L of gas at 1.5 atm is compressed to 0.75 L at constant temperature, what is the new pressure?", examples = [] }: QuestionInputProps) {
   const [question, setQuestion] = useState("")
   const [selectedTopic, setSelectedTopic] = useState<string>()
 
@@ -73,7 +74,7 @@ export function QuestionInput({ onSubmit, isLoading = false, examples = [] }: Qu
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Textarea
-              placeholder="Example: If 2.0 L of gas at 1.5 atm is compressed to 0.75 L at constant temperature, what is the new pressure?"
+              placeholder={placeholder}
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               className="min-h-[100px] resize-none text-base"
