@@ -99,10 +99,10 @@ const handleQuestionSubmit = async (question: string, topicHint?: string) => {
               examples={[
                 {
                   id: "stoich-1",
-                  title: "Limiting Reagent with Percent Yield",
-                  question: "If 12.0 g of propane (C3H8) reacts with 80.0 g of oxygen (O2), and 35.0 g of CO2 is actually collected, determine: The limiting reagent. The theoretical yield of CO2 (in grams). The percent yield. (Use atomic masses: C = 12.011, H = 1.008, O = 15.999.)",
+                  title: "Methane Combustion",
+                  question: "How many grams of water (H2O) are produced when 8.00 g of methane (CH4) burns completely in oxygen?",
                   topic: "stoichiometry",
-                  difficulty: "advanced"
+                  difficulty: "beginner"
                 },
                 {
                   id: "stoich-2",
