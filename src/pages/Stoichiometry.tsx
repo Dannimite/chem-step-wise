@@ -106,8 +106,8 @@ const handleQuestionSubmit = async (question: string, topicHint?: string) => {
                 },
                 {
                   id: "stoich-2",
-                  title: "Methane Combustion",
-                  question: "How many grams of water (H2O) are produced when 8.00 g of methane (CH4) burns completely in oxygen?",
+                  title: "Limiting Reagent Problem",
+                  question: "If 15.0 g of aluminum reacts with 30.0 g of chlorine gas (Cl2) according to the equation 2Al + 3Cl2 → 2AlCl3, which reactant is the limiting reagent and how many grams of AlCl3 can be produced?",
                   topic: "stoichiometry",
                   difficulty: "intermediate"
                 }
