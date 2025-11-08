@@ -106,8 +106,8 @@ const handleQuestionSubmit = async (question: string, topicHint?: string) => {
                 },
                 {
                   id: "stoich-2",
-                  title: "Combustion Stoichiometry",
-                  question: "How many grams of CO2 are produced when 10.0 g of propane (C3H8) burns completely?",
+                  title: "Methane Combustion",
+                  question: "How many grams of water (H2O) are produced when 8.00 g of methane (CH4) burns completely in oxygen?",
                   topic: "stoichiometry",
                   difficulty: "intermediate"
                 }
