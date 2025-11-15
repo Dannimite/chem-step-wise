@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { AppSidebar } from "@/components/ui/app-sidebar";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import GasLaws from "./pages/GasLaws";
 import PeriodicTable from "./pages/PeriodicTable";
@@ -34,6 +35,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <SidebarProvider>
           <div className="min-h-screen flex w-full bg-background">
             <AppSidebar />
