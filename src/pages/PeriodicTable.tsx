@@ -229,7 +229,7 @@ const PeriodicTable = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="table" className="w-full">
+      <Tabs defaultValue="table" className="w-full" onValueChange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="table">Periodic Table</TabsTrigger>
           <TabsTrigger value="calculator">Molar Mass Calculator</TabsTrigger>
