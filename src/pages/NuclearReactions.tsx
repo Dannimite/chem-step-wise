@@ -269,7 +269,7 @@ const NuclearReactions = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="reactions" className="w-full">
+      <Tabs defaultValue="reactions" className="w-full" onValueChange={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="reactions">Reaction Types</TabsTrigger>
           <TabsTrigger value="examples">Examples</TabsTrigger>
@@ -305,11 +305,11 @@ const NuclearReactions = () => {
                         }`}
                         onClick={() => setSelectedReaction(reaction)}
                       >
-                        <div className="flex items-center gap-2 w-full">
-                          <span className="font-bold text-lg">{reaction.symbol}</span>
-                          <span className="font-medium">{reaction.name}</span>
+                        <div className="flex items-center gap-2 w-full flex-wrap">
+                          <span className="font-bold text-lg flex-shrink-0">{reaction.symbol}</span>
+                          <span className="font-medium break-words">{reaction.name}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-1 break-words w-full">
                           {reaction.description}
                         </p>
                       </Button>
