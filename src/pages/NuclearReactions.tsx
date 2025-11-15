@@ -300,16 +300,16 @@ const NuclearReactions = () => {
                       <Button
                         key={reaction.id}
                         variant={selectedReaction.id === reaction.id ? "default" : "outline"}
-                        className={`h-auto p-4 flex flex-col items-start justify-start text-left transition-all hover:scale-[1.02] ${
+                        className={`h-auto p-4 flex flex-col items-start justify-start text-left transition-all hover:scale-[1.02] overflow-hidden ${
                           categoryColors[reaction.category as keyof typeof categoryColors]
                         }`}
                         onClick={() => setSelectedReaction(reaction)}
                       >
                         <div className="flex items-center gap-2 w-full flex-wrap">
                           <span className="font-bold text-lg flex-shrink-0">{reaction.symbol}</span>
-                          <span className="font-medium break-words">{reaction.name}</span>
+                          <span className="font-medium break-words min-w-0 whitespace-normal">{reaction.name}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-1 break-words w-full">
+                        <p className="text-xs text-muted-foreground mt-1 break-words w-full whitespace-normal overflow-wrap-anywhere">
                           {reaction.description}
                         </p>
                       </Button>
