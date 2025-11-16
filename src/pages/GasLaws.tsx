@@ -2,6 +2,7 @@ import { useState } from "react"
 import { QuestionInput } from "@/components/chemistry/QuestionInput"
 import { SolutionDisplay } from "@/components/chemistry/SolutionDisplay"
 import { TopicCalculator } from "@/components/chemistry/TopicCalculator"
+import { UnitConverter } from "@/components/chemistry/UnitConverter"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -78,10 +79,11 @@ const GasLaws = () => {
       </div>
 
       <Tabs defaultValue="solver" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="solver">Problem Solver</TabsTrigger>
           <TabsTrigger value="understanding">Understanding Gas Laws</TabsTrigger>
           <TabsTrigger value="calculator">Interactive Calculator</TabsTrigger>
+          <TabsTrigger value="converter">Unit Converter</TabsTrigger>
         </TabsList>
 
         <TabsContent value="solver" className="space-y-6">
@@ -394,6 +396,10 @@ const GasLaws = () => {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="converter" className="space-y-6">
+          <UnitConverter />
         </TabsContent>
       </Tabs>
     </div>
