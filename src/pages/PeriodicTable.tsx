@@ -383,8 +383,13 @@ const PeriodicTable = () => {
                         className="w-full h-full object-cover"
                         onError={(e) => {
                           const img = e.currentTarget;
-                          if (!img.dataset.fallback) {
+                          const name = selectedElement.name.toLowerCase();
+                          const step = img.dataset.fallback ?? "0";
+                          if (step === "0") {
                             img.dataset.fallback = "1";
+                            img.src = `https://images-of-elements.com/s/${name}.jpg`;
+                          } else if (step === "1") {
+                            img.dataset.fallback = "2";
                             img.src = `https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Blank_square.svg/240px-Blank_square.svg.png`;
                             img.classList.add("opacity-40");
                           }
