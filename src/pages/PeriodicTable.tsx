@@ -368,12 +368,32 @@ const PeriodicTable = () => {
                   <CardTitle>Element Details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="text-center">
+                  <div className="text-center space-y-3">
                     <div className={`inline-flex h-20 w-20 items-center justify-center rounded-lg border-2 text-2xl font-bold ${
                       categoryColors[selectedElement.category as keyof typeof categoryColors]
                     }`}>
                       {selectedElement.symbol}
                     </div>
+                    <div className="mx-auto w-full max-w-[240px] aspect-square rounded-lg overflow-hidden border border-border bg-muted/30 flex items-center justify-center">
+                      <img
+                        key={selectedElement.symbol}
+                        src={`https://images-of-elements.com/${selectedElement.name.toLowerCase()}.jpg`}
+                        alt={`Sample of ${selectedElement.name}`}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          if (!img.dataset.fallback) {
+                            img.dataset.fallback = "1";
+                            img.src = `https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Blank_square.svg/240px-Blank_square.svg.png`;
+                            img.classList.add("opacity-40");
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Appearance of {selectedElement.name} at room temperature
+                    </p>
                   </div>
                   
                   <div className="space-y-3">
