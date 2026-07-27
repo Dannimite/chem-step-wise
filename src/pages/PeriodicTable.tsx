@@ -384,21 +384,13 @@ const PeriodicTable = () => {
                         // Synthetic elements / elements without real photos — use a silvery metal placeholder
                         const silveryMetal = new Set([
                           "einsteinium", "fermium",
+                          "rutherfordium", "dubnium", "seaborgium",
+                          "bohrium", "hassium", "meitnerium",
                         ]);
-                        // Superheavy synthetic elements — conceptual particle-physics visualizations
-                        const superheavyImages: Record<string, string> = {
-                          rutherfordium: element104,
-                          dubnium: element105,
-                          seaborgium: element106,
-                          bohrium: element107,
-                          hassium: element108,
-                          meitnerium: element109,
-                        };
                         const primaryName = nameOverrides[nameLc] ?? nameLc;
-                        const initialSrc = superheavyImages[nameLc]
-                          ?? (silveryMetal.has(nameLc)
-                            ? silveryMetalSample
-                            : `https://images-of-elements.com/${primaryName}.jpg`);
+                        const initialSrc = silveryMetal.has(nameLc)
+                          ? silveryMetalSample
+                          : `https://images-of-elements.com/${primaryName}.jpg`;
                         return (
                           <img
                             key={selectedElement.symbol}
