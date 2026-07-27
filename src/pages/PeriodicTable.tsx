@@ -6,12 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Atom } from "lucide-react"
 import silveryMetalSample from "@/assets/silvery-metal-sample.jpg"
-import element104 from "@/assets/element-104-rutherfordium.jpg"
-import element105 from "@/assets/element-105-dubnium.jpg"
-import element106 from "@/assets/element-106-seaborgium.jpg"
-import element107 from "@/assets/element-107-bohrium.jpg"
-import element108 from "@/assets/element-108-hassium.jpg"
-import element109 from "@/assets/element-109-meitnerium.jpg"
 
 // Complete periodic table data - 109 elements (with state of matter at room temperature)
 const periodicElements = [
