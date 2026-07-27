@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Atom } from "lucide-react"
+import silveryMetalSample from "@/assets/silvery-metal-sample.jpg"
 
 // Complete periodic table data - 109 elements (with state of matter at room temperature)
 const periodicElements = [
