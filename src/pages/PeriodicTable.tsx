@@ -6,12 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Atom } from "lucide-react"
 import silveryMetalSample from "@/assets/silvery-metal-sample.jpg"
-import element104 from "@/assets/element-104-rutherfordium.jpg"
-import element105 from "@/assets/element-105-dubnium.jpg"
-import element106 from "@/assets/element-106-seaborgium.jpg"
-import element107 from "@/assets/element-107-bohrium.jpg"
-import element108 from "@/assets/element-108-hassium.jpg"
-import element109 from "@/assets/element-109-meitnerium.jpg"
 
 // Complete periodic table data - 109 elements (with state of matter at room temperature)
 const periodicElements = [
@@ -390,21 +384,13 @@ const PeriodicTable = () => {
                         // Synthetic elements / elements without real photos — use a silvery metal placeholder
                         const silveryMetal = new Set([
                           "einsteinium", "fermium",
+                          "rutherfordium", "dubnium", "seaborgium",
+                          "bohrium", "hassium", "meitnerium",
                         ]);
-                        // Superheavy synthetic elements — conceptual particle-physics visualizations
-                        const superheavyImages: Record<string, string> = {
-                          rutherfordium: element104,
-                          dubnium: element105,
-                          seaborgium: element106,
-                          bohrium: element107,
-                          hassium: element108,
-                          meitnerium: element109,
-                        };
                         const primaryName = nameOverrides[nameLc] ?? nameLc;
-                        const initialSrc = superheavyImages[nameLc]
-                          ?? (silveryMetal.has(nameLc)
-                            ? silveryMetalSample
-                            : `https://images-of-elements.com/${primaryName}.jpg`);
+                        const initialSrc = silveryMetal.has(nameLc)
+                          ? silveryMetalSample
+                          : `https://images-of-elements.com/${primaryName}.jpg`;
                         return (
                           <img
                             key={selectedElement.symbol}
