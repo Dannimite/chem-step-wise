@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Atom } from "lucide-react"
-import silveryMetalSample from "@/assets/silvery-metal-sample.jpg"
+import { ElementImage } from "@/components/chemistry/ElementImage"
 
 // Complete periodic table data - 109 elements (with state of matter at room temperature)
 const periodicElements = [
@@ -375,47 +375,10 @@ const PeriodicTable = () => {
                     }`}>
                       {selectedElement.symbol}
                     </div>
-                    <div className="mx-auto w-full max-w-[240px] aspect-square rounded-lg overflow-hidden border border-border bg-muted/30 flex items-center justify-center">
-                      {(() => {
-                        const nameLc = selectedElement.name.toLowerCase();
-                        const nameOverrides: Record<string, string> = {
-                          aluminum: "aluminium",
-                        };
-                        // Synthetic elements / elements without real photos — use a silvery metal placeholder
-                        const silveryMetal = new Set([
-                          "einsteinium", "fermium",
-                          "rutherfordium", "dubnium", "seaborgium",
-                          "bohrium", "hassium", "meitnerium",
-                        ]);
-                        const primaryName = nameOverrides[nameLc] ?? nameLc;
-                        const initialSrc = silveryMetal.has(nameLc)
-                          ? silveryMetalSample
-                          : `https://images-of-elements.com/${primaryName}.jpg`;
-                        return (
-                          <img
-                            key={selectedElement.symbol}
-                            src={initialSrc}
-                            alt={`Sample of ${selectedElement.name}`}
-                            loading="lazy"
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              const img = e.currentTarget;
-                              const step = img.dataset.fallback ?? "0";
-                              if (step === "0") {
-                                img.dataset.fallback = "1";
-                                img.src = `https://images-of-elements.com/s/${primaryName}.jpg`;
-                              } else if (step === "1") {
-                                img.dataset.fallback = "2";
-                                img.src = silveryMetalSample;
-                              }
-                            }}
-                          />
-                        );
-                      })()}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Appearance of {selectedElement.name} at room temperature
-                    </p>
+                    <ElementImage
+                      atomicNumber={selectedElement.atomicNumber}
+                      name={selectedElement.name}
+                    />
                   </div>
                   
                   <div className="space-y-3">

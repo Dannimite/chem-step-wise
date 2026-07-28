@@ -1,4 +1,5 @@
 import { SolverResponse, SolutionStep } from "@/types/chemistry"
+import { parseIdealGasQuestion, solveIdealGasLaw } from "@/lib/gasLaws"
 
 interface QuestionAnalysis {
   topic: string
@@ -737,237 +738,98 @@ class ChemistrySolver {
   }
 
   private solveIdealGas(question: string, variables: Record<string, any>): SolverResponse {
-    const numbers = this.extractNumbers(question)
-    const gasValues = this.extractGasLawVariables(question, numbers)
-    
-    const p = gasValues.pressure1 || numbers[0]
-    const v = gasValues.volume1 || numbers[1]
-    const n = gasValues.moles || numbers[2]
-    let t = gasValues.temperature1 || numbers[3]
-    const R = 0.0821 // L·atm/(mol·K)
-    
-    // Check if temperature needs conversion from Celsius to Kelvin
-    const tempInCelsius = /(\d+\.?\d*)\s*°?C/i.test(question)
-    let tempCelsius: number | null = null
-    
-    if (tempInCelsius && t) {
-      // Temperature is in Celsius, need to convert
-      tempCelsius = t
-      t = t + 273.15
-    }
-    
-    // Determine what we're solving for
-    let calculated: number
-    let calculatedVar: string
-    let formula: string
-    let numerator: number
-    let denominator: number
-    let numeratorCalc: string
-    let denominatorCalc: string
-    
-    const steps: SolutionStep[] = []
-    
-    if (!n && p && v && t) {
-      // Solving for moles
-      calculatedVar = 'n'
-      formula = 'n = PV / RT'
-      numerator = p * v
-      denominator = R * t
-      numeratorCalc = `${p.toFixed(2)} × ${v.toFixed(2)} = ${numerator.toFixed(2)}`
-      denominatorCalc = `${R} × ${t.toFixed(2)} = ${denominator.toFixed(6)}`
-      calculated = numerator / denominator
-      
-      steps.push({
-        stepNumber: 1,
-        title: "Identify the Law and Rearrange",
-        description: "Use Ideal Gas Law and solve for n",
-        formula: "PV = nRT",
-        latexFormula: "PV = nRT",
-        explanation: `Solve for n:\nn = PV / RT`
-      })
-      
-      if (tempCelsius !== null) {
-        steps.push({
-          stepNumber: 2,
-          title: "Convert Temperature to Kelvin",
-          description: "Add 273.15 to Celsius temperature",
-          calculation: `T = ${tempCelsius.toFixed(1)} + 273.15 = ${t.toFixed(2)} K`,
-          result: `T = ${t.toFixed(2)} K`
-        })
+    const { knowns, askedFor } = parseIdealGasQuestion(question)
+
+    if (!askedFor) {
+      return {
+        success: false,
+        detectedTopic: "Gas Laws - Ideal Gas Law",
+        canonicalProblem: question,
+        steps: [
+          {
+            stepNumber: 1,
+            title: "Ideal Gas Law",
+            description: "Could not determine which variable to solve for",
+            formula: "PV = nRT",
+            explanation: "Provide any three of pressure, volume, moles, and temperature, and indicate which one to find."
+          }
+        ],
+        finalAnswer: "Insufficient information — provide three of P, V, n, T and state which to find.",
+        latexEquations: ["PV = nRT"],
+        confidence: 0.3,
+        error: "Missing variables"
       }
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 3 : 2,
-        title: "Substitute Known Values",
-        description: "Insert all known values with units",
-        substitution: `P = ${p.toFixed(2)} atm, V = ${v.toFixed(2)} L, R = ${R} L·atm·mol⁻¹·K⁻¹, T = ${t.toFixed(2)} K`,
-        calculation: `n = (${p.toFixed(2)})(${v.toFixed(2)}) / (${R})(${t.toFixed(2)})`
-      })
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 4 : 3,
-        title: "Calculate Step-by-Step",
-        description: "Solve numerator and denominator separately, then divide",
-        calculation: `Numerator:\n${numeratorCalc}\n\nDenominator:\n${denominatorCalc}\n\nNow divide:\nn = ${numerator.toFixed(1)} / ${denominator.toFixed(6)} = ${calculated.toFixed(4)} mol`
-      })
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 5 : 4,
-        title: "✅ Final Answer",
-        description: "Round to appropriate significant figures",
-        result: `n = ${calculated.toFixed(2)} mol of nitrogen gas`
-      })
-      
-    } else if (!v && p && n && t) {
-      // Solving for volume
-      calculatedVar = 'V'
-      formula = 'V = nRT / P'
-      numerator = n * R * t
-      denominator = p
-      numeratorCalc = `${n.toFixed(2)} × ${R} × ${t.toFixed(2)} = ${numerator.toFixed(6)}`
-      denominatorCalc = `${denominator.toFixed(2)}`
-      calculated = numerator / denominator
-      
-      steps.push({
-        stepNumber: 1,
-        title: "Identify the Law and Rearrange",
-        description: "Use Ideal Gas Law and solve for V",
-        formula: "PV = nRT",
-        latexFormula: "PV = nRT",
-        explanation: `Solve for V:\nV = nRT / P`
-      })
-      
-      if (tempCelsius !== null) {
-        steps.push({
-          stepNumber: 2,
-          title: "Convert Temperature to Kelvin",
-          description: "Add 273.15 to Celsius temperature",
-          calculation: `T = ${tempCelsius.toFixed(1)} + 273.15 = ${t.toFixed(2)} K`,
-          result: `T = ${t.toFixed(2)} K`
-        })
-      }
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 3 : 2,
-        title: "Substitute Known Values",
-        description: "Insert all known values with units",
-        substitution: `n = ${n.toFixed(2)} mol, R = ${R} L·atm·mol⁻¹·K⁻¹, T = ${t.toFixed(2)} K, P = ${p.toFixed(2)} atm`,
-        calculation: `V = (${n.toFixed(2)})(${R})(${t.toFixed(2)}) / ${p.toFixed(2)}`
-      })
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 4 : 3,
-        title: "Calculate Step-by-Step",
-        description: "Solve numerator, then divide by denominator",
-        calculation: `Numerator: ${numeratorCalc}\n\nDenominator: ${denominatorCalc}\n\nNow divide:\nV = ${numerator.toFixed(6)} / ${denominator.toFixed(2)} = ${calculated.toFixed(2)} L`,
-        result: `V = ${calculated.toFixed(2)} L`
-      })
-      
-    } else if (!p && v && n && t) {
-      // Solving for pressure
-      calculatedVar = 'P'
-      formula = 'P = nRT / V'
-      numerator = n * R * t
-      denominator = v
-      numeratorCalc = `${n.toFixed(2)} × ${R} × ${t.toFixed(2)} = ${numerator.toFixed(6)}`
-      denominatorCalc = `${denominator.toFixed(2)}`
-      calculated = numerator / denominator
-      
-      steps.push({
-        stepNumber: 1,
-        title: "Identify the Law and Rearrange",
-        description: "Use Ideal Gas Law and solve for P",
-        formula: "PV = nRT",
-        latexFormula: "PV = nRT",
-        explanation: `Solve for P:\nP = nRT / V`
-      })
-      
-      if (tempCelsius !== null) {
-        steps.push({
-          stepNumber: 2,
-          title: "Convert Temperature to Kelvin",
-          description: "Add 273.15 to Celsius temperature",
-          calculation: `T = ${tempCelsius.toFixed(1)} + 273.15 = ${t.toFixed(2)} K`,
-          result: `T = ${t.toFixed(2)} K`
-        })
-      }
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 3 : 2,
-        title: "Substitute Known Values",
-        description: "Insert all known values with units",
-        substitution: `n = ${n.toFixed(2)} mol, R = ${R} L·atm·mol⁻¹·K⁻¹, T = ${t.toFixed(2)} K, V = ${v.toFixed(2)} L`,
-        calculation: `P = (${n.toFixed(2)})(${R})(${t.toFixed(2)}) / ${v.toFixed(2)}`
-      })
-      
-      steps.push({
-        stepNumber: tempCelsius !== null ? 4 : 3,
-        title: "Calculate Step-by-Step",
-        description: "Solve numerator, then divide by denominator",
-        calculation: `Numerator: ${numeratorCalc}\n\nDenominator: ${denominatorCalc}\n\nNow divide:\nP = ${numerator.toFixed(6)} / ${denominator.toFixed(2)} = ${calculated.toFixed(2)} atm`,
-        result: `P = ${calculated.toFixed(2)} atm`
-      })
-      
-    } else if (!t && p && v && n) {
-      // Solving for temperature
-      calculatedVar = 'T'
-      formula = 'T = PV / nR'
-      numerator = p * v
-      denominator = n * R
-      numeratorCalc = `${p.toFixed(2)} × ${v.toFixed(2)} = ${numerator.toFixed(2)}`
-      denominatorCalc = `${n.toFixed(2)} × ${R} = ${denominator.toFixed(6)}`
-      calculated = numerator / denominator
-      
-      steps.push({
-        stepNumber: 1,
-        title: "Identify the Law and Rearrange",
-        description: "Use Ideal Gas Law and solve for T",
-        formula: "PV = nRT",
-        latexFormula: "PV = nRT",
-        explanation: `Solve for T:\nT = PV / nR`
-      })
-      
-      steps.push({
-        stepNumber: 2,
-        title: "Substitute Known Values",
-        description: "Insert all known values with units",
-        substitution: `P = ${p.toFixed(2)} atm, V = ${v.toFixed(2)} L, n = ${n.toFixed(2)} mol, R = ${R} L·atm·mol⁻¹·K⁻¹`,
-        calculation: `T = (${p.toFixed(2)})(${v.toFixed(2)}) / (${n.toFixed(2)})(${R})`
-      })
-      
-      steps.push({
-        stepNumber: 3,
-        title: "Calculate Step-by-Step",
-        description: "Solve numerator and denominator separately, then divide",
-        calculation: `Numerator: ${numeratorCalc}\n\nDenominator: ${denominatorCalc}\n\nNow divide:\nT = ${numerator.toFixed(2)} / ${denominator.toFixed(6)} = ${calculated.toFixed(2)} K`,
-        result: `T = ${calculated.toFixed(2)} K`
-      })
-      
-    } else {
-      // Default to solving for volume
-      calculatedVar = 'V'
-      formula = 'V = nRT / P'
-      numerator = (n || 1) * R * (t || 273.15)
-      denominator = p || 1
-      calculated = numerator / denominator
-    }
-    
-    const unitMap: Record<string, string> = {
-      'n': 'mol',
-      'V': 'L',
-      'P': 'atm',
-      'T': 'K'
     }
 
-    return {
-      success: true,
-      detectedTopic: "Gas Laws - Ideal Gas Law",
-      canonicalProblem: question,
-      steps,
-      finalAnswer: `${calculatedVar} = ${calculated.toFixed(2)} ${unitMap[calculatedVar]}`,
-      latexEquations: ["PV = nRT"],
-      confidence: 0.95,
-      interpretation: "Ideal Gas Law provides a comprehensive relationship between all gas properties."
+    try {
+      const sol = solveIdealGasLaw(knowns, askedFor)
+      const steps: SolutionStep[] = [
+        {
+          stepNumber: 1,
+          title: "Identify the Law and Rearrange",
+          description: `Use the Ideal Gas Law and solve for ${sol.unknown}`,
+          formula: sol.formula,
+          latexFormula: sol.formulaLatex,
+          explanation: `Rearranged: ${sol.rearrangedFormula}`
+        }
+      ]
+
+      let stepNo = 2
+      if (sol.temperatureConversion) {
+        steps.push({
+          stepNumber: stepNo++,
+          title: "Convert Temperature to Kelvin",
+          description: "The Ideal Gas Law requires absolute temperature",
+          calculation: sol.temperatureConversion,
+          result: `T = ${sol.knowns.T.toFixed(2)} K`
+        })
+      }
+
+      steps.push({
+        stepNumber: stepNo++,
+        title: "Substitute Known Values",
+        description: "Insert all known values with base units (atm, L, mol, K)",
+        substitution: `P = ${sol.knowns.P} atm, V = ${sol.knowns.V} L, n = ${sol.knowns.n} mol, T = ${sol.knowns.T.toFixed(2)} K, R = ${sol.R} L·atm·mol⁻¹·K⁻¹`,
+        calculation: `${sol.unknown} = ${sol.rearrangedFormula.split("=")[1].trim()}`
+      })
+
+      steps.push({
+        stepNumber: stepNo++,
+        title: "Calculate Step-by-Step",
+        description: "Evaluate the numerator and denominator, then divide",
+        calculation: `Numerator: ${sol.numeratorText}\nDenominator: ${sol.denominatorText}\n${sol.unknown} = ${sol.numerator.toPrecision(6)} / ${sol.denominator.toPrecision(6)} = ${sol.value.toPrecision(4)} ${sol.unit}`,
+        result: `${sol.unknown} = ${sol.value.toFixed(2)} ${sol.unit}`
+      })
+
+      return {
+        success: true,
+        detectedTopic: "Gas Laws - Ideal Gas Law",
+        canonicalProblem: question,
+        steps,
+        finalAnswer: `${sol.unknown} = ${sol.value.toFixed(2)} ${sol.unit}`,
+        latexEquations: ["PV = nRT"],
+        confidence: 0.95,
+        interpretation: "Ideal Gas Law relates pressure, volume, moles, and temperature; solved for the single unknown variable."
+      }
+    } catch (err) {
+      return {
+        success: false,
+        detectedTopic: "Gas Laws - Ideal Gas Law",
+        canonicalProblem: question,
+        steps: [
+          {
+            stepNumber: 1,
+            title: "Ideal Gas Law",
+            description: "Not enough information to solve",
+            formula: "PV = nRT",
+            explanation: err instanceof Error ? err.message : "Missing variables"
+          }
+        ],
+        finalAnswer: "Insufficient information — provide three of P, V, n, T.",
+        latexEquations: ["PV = nRT"],
+        confidence: 0.3,
+        error: err instanceof Error ? err.message : "Missing variables"
+      }
     }
   }
 
