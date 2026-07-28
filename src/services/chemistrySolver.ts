@@ -1,4 +1,5 @@
 import { SolverResponse, SolutionStep } from "@/types/chemistry"
+import { parseIdealGasQuestion, solveIdealGasLaw } from "@/lib/gasLaws"
 
 interface QuestionAnalysis {
   topic: string
