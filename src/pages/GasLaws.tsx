@@ -56,22 +56,15 @@ const GasLaws = () => {
             { name: "Charles's Law", formula: "V₁/T₁ = V₂/T₂", condition: "Constant P" },
             { name: "Gay-Lussac's Law", formula: "P₁/T₁ = P₂/T₂", condition: "Constant V" },
             { name: "Combined Gas Law", formula: "(P₁V₁)/T₁ = (P₂V₂)/T₂", condition: "n constant" },
-            { name: "Ideal Gas Law", formula: "PV = nRT", condition: "Coming Soon" }
+            { name: "Ideal Gas Law", formula: "PV = nRT", condition: "One state" }
           ].map((law) => (
             <Card key={law.name} className="border-border/30 hover:shadow-md transition-shadow relative">
               <CardContent className="p-4">
                 <div className="space-y-2">
                   <div className="font-medium text-sm text-foreground">{law.name}</div>
                   <div className="font-mono text-primary text-xs">{law.formula}</div>
-                  {law.condition !== "Coming Soon" && (
-                    <Badge variant="outline" className="text-xs">{law.condition}</Badge>
-                  )}
+                  <Badge variant="outline" className="text-xs">{law.condition}</Badge>
                 </div>
-                {law.condition === "Coming Soon" && (
-                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                    <Badge variant="outline" className="text-xs bg-background shadow-md">Coming Soon</Badge>
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}
