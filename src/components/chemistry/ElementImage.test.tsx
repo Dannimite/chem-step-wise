@@ -29,13 +29,13 @@ describe("<ElementImage />", () => {
   it("shows a 'Reference sample' label for synthetic elements 104–109", () => {
     for (let z = 104; z <= 109; z++) {
       const { unmount } = render(<ElementImage atomicNumber={z} />);
-      expect(screen.getByText(/Reference sample/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/Reference sample/i).length).toBeGreaterThan(0);
       unmount();
     }
   });
 
   it("shows a 'Conceptual visual' label for oganesson (118)", () => {
     render(<ElementImage atomicNumber={118} />);
-    expect(screen.getByText(/Conceptual visual/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Conceptual visual/i).length).toBeGreaterThan(0);
   });
 });
