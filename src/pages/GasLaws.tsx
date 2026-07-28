@@ -275,14 +275,11 @@ const GasLaws = () => {
             </Card>
 
             {/* Ideal Gas Law */}
-            <Card className="shadow-card border-l-4 border-l-primary opacity-60">
+            <Card className="shadow-card border-l-4 border-l-primary">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-xl">5. Ideal Gas Law</CardTitle>
-                  <div className="flex gap-2">
-                    <Badge variant="secondary">Coming Soon</Badge>
-                    <Badge>All Variables</Badge>
-                  </div>
+                  <Badge>All Variables</Badge>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
