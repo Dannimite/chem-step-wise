@@ -10,19 +10,39 @@ import { Gauge } from "lucide-react"
 import { mockGasLawsVariables } from "@/data/mockData"
 import { SolverResponse } from "@/types/chemistry"
 import { chemistrySolver } from "@/services/chemistrySolver"
+import { IdealGasPlot } from "@/components/chemistry/IdealGasPlot"
+import { parseIdealGasQuestion, solveIdealGasLaw, type IdealGasSolution } from "@/lib/gasLaws"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { HelpCircle } from "lucide-react"
 
 const GasLaws = () => {
   const [solution, setSolution] = useState<SolverResponse>()
   const [isLoading, setIsLoading] = useState(false)
   const [calculatorResult, setCalculatorResult] = useState<string>()
+  const [plotSolution, setPlotSolution] = useState<IdealGasSolution>()
+  const [clarifications, setClarifications] = useState<string[]>([])
 
   const handleQuestionSubmit = async (question: string, topicHint?: string) => {
     setIsLoading(true)
     setSolution(undefined)
     
+    setPlotSolution(undefined)
+    setClarifications([])
+
     setTimeout(() => {
       const result = chemistrySolver.solve(question, topicHint ?? 'gas-laws')
       setSolution(result)
+      setClarifications(result.clarifyingQuestions ?? [])
+
+      if (result.success) {
+        try {
+          const { knowns, askedFor } = parseIdealGasQuestion(question)
+          if (askedFor) setPlotSolution(solveIdealGasLaw(knowns, askedFor))
+        } catch {
+          setPlotSolution(undefined)
+        }
+      }
+
       setIsLoading(false)
     }, 2000)
   }
@@ -85,11 +105,28 @@ const GasLaws = () => {
               onSubmit={handleQuestionSubmit}
               isLoading={isLoading}
             />
-            <SolutionDisplay 
-              solution={solution}
-              isLoading={isLoading}
-            />
+            <div className="space-y-6">
+              {clarifications.length > 0 && (
+                <Alert>
+                  <HelpCircle className="h-4 w-4" />
+                  <AlertTitle>Quick question before I solve</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc pl-5 space-y-1 mt-1">
+                      {clarifications.map((q) => (
+                        <li key={q}>{q}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
+              <SolutionDisplay 
+                solution={solution}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
+
+          {plotSolution && <IdealGasPlot solution={plotSolution} />}
         </TabsContent>
 
         <TabsContent value="understanding" className="space-y-6">

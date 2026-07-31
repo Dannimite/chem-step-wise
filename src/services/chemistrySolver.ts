@@ -1,5 +1,5 @@
 import { SolverResponse, SolutionStep } from "@/types/chemistry"
-import { parseIdealGasQuestion, solveIdealGasLaw } from "@/lib/gasLaws"
+import { parseIdealGasQuestion, solveIdealGasLaw, validateGasUnits } from "@/lib/gasLaws"
 
 interface QuestionAnalysis {
   topic: string
@@ -739,6 +739,29 @@ class ChemistrySolver {
 
   private solveIdealGas(question: string, variables: Record<string, any>): SolverResponse {
     const { knowns, askedFor } = parseIdealGasQuestion(question)
+    const unitCheck = validateGasUnits(question)
+
+    if (!unitCheck.ok) {
+      return {
+        success: false,
+        detectedTopic: "Gas Laws - Ideal Gas Law",
+        canonicalProblem: question,
+        steps: [
+          {
+            stepNumber: 1,
+            title: "Units need clarification",
+            description: "Some quantities are missing units or use mixed units, so the answer would be ambiguous.",
+            formula: "PV = nRT",
+            explanation: unitCheck.clarifyingQuestions.join(" ")
+          }
+        ],
+        finalAnswer: "Please clarify the units before I solve this.",
+        latexEquations: ["PV = nRT"],
+        confidence: 0.2,
+        clarifyingQuestions: unitCheck.clarifyingQuestions,
+        error: "Ambiguous or missing units"
+      }
+    }
 
     if (!askedFor) {
       return {
